@@ -11,7 +11,6 @@ Last modified 2024-05-07 by Anthony Vanderkop.
 Hopefully without introducing new bugs.
 '''
 
-
 ### LIBRARY IMPORTS HERE ###
 import os
 import numpy as np
@@ -19,61 +18,95 @@ import keras.applications as ka
 import keras
 import tensorflow as tf
 import cv2
-    
+from keras.src.layers import Dense
+
+
 def my_team():
     '''
     Return the list of the team members of this assignment submission as a list
     of triplet of the form (student_number, first_name, last_name)
     
     '''
-    return [ (11921048, 'Isabell Sophie', 'Hans'), (11220902, 'Kayathri', 'Arumugam'), (11477296, 'Nasya Sze Yuen', 'Liew') ]
-    
+    return [(11921048, 'Isabell Sophie', 'Hans'), (11220902, 'Kayathri', 'Arumugam'),
+            (11477296, 'Nasya Sze Yuen', 'Liew')]
+
+
 def load_model():
     '''
     Load in a model using the tf.keras.applications model and return it.
     Insert a more detailed description here TODO
     '''
     model = tf.keras.applications.MobileNetV2()
+    num_classes = 5
+    model.layers[-1] = Dense(num_classes, activation='softmax')
     return model
-    
+
 
 def load_data(path):
     '''
     Load in the dataset from its home path. Path should be a string of the path
     to the home directory the dataset is found in. Should return a numpy array
     with paired images and class labels.
-    
-    Insert a more detailed description here. TODO
     '''
-
     classes = os.listdir(path)
+    images = []
+    labels = []
     data = []
+    image_size=(224, 224)
     for i, class_name in enumerate(classes):
+
         class_path = os.path.join(path, class_name)
         class_images = os.listdir(class_path)
         for image_name in class_images:
             image_path = os.path.join(class_path, image_name)
             image = cv2.imread(image_path)
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            data.append((image, i))
-    data = np.array(data)
+            image = cv2.resize(image, image_size)
+            image = np.array(image)
+            images.append(image)
+            labels.append(class_name)
+            data.append((image, class_name))
     return data
-    
-    
+
+
 def split_data(X, Y, train_fraction, randomize=False, eval_set=True):
     """
     Split the data into training and testing sets. If eval_set is True, also create
     an evaluation dataset. There should be two outputs if eval_set there should
     be three outputs (train, test, eval), otherwise two outputs (train, test).
     
-    To see what type train, test, and eval should be, refer to the inputs of 
-    transfer_learning().
-    
-    Insert a more detailed description here. TODO
+    Args:
+        X (numpy.ndarray): Input features.
+        Y (numpy.ndarray): Corresponding labels.
+        train_fraction (float): Fraction of data to use for training.
+        randomize (bool, optional): Whether to randomly shuffle the data. Defaults to False.
+        eval_set (bool, optional): Whether to create an evaluation dataset. Defaults to True.
+
+    Returns:
+        tuple: If eval_set is True, returns (train_X, train_Y, test_X, test_Y, eval_X, eval_Y).
+               If eval_set is False, returns (train_X, train_Y, test_X, test_Y).
     """
-    raise NotImplementedError
-    
-    
+    num_samples = len(X)
+    train_samples = int(num_samples * train_fraction)
+    test_samples = num_samples - train_samples
+
+    if randomize:
+        indices = np.random.permutation(num_samples)
+        X = X[indices]
+        Y = Y[indices]
+
+    train_X = X[:train_samples]
+    train_Y = Y[:train_samples]
+    test_X = X[train_samples:train_samples + test_samples]
+    test_Y = Y[train_samples:train_samples + test_samples]
+
+    if eval_set:
+        eval_X = X[train_samples + test_samples:]
+        eval_Y = Y[train_samples + test_samples:]
+        return train_X, train_Y, test_X, test_Y, eval_X, eval_Y
+    else:
+        return train_X, train_Y, test_X, test_Y
+
 
 def confusion_matrix(predictions, ground_truth, plot=False, all_classes=None):
     '''
@@ -98,10 +131,10 @@ def confusion_matrix(predictions, ground_truth, plot=False, all_classes=None):
               Each row corresponds to a unique class in the ground truth and
               each column to a prediction of a unique class by a classifier
     '''
-    
+
     raise NotImplementedError
     return cm
-    
+
 
 def precision(predictions, ground_truth):
     '''
@@ -115,6 +148,7 @@ def precision(predictions, ground_truth):
     raise NotImplementedError
     return precision
 
+
 def recall(predictions, ground_truth):
     '''
     Similar to the confusion matrix, now calculate the classifier's recall
@@ -127,6 +161,7 @@ def recall(predictions, ground_truth):
     raise NotImplementedError
     return recall
 
+
 def f1(predictions, ground_truth):
     '''
     Similar to the confusion matrix, now calculate the classifier's f1 score
@@ -135,9 +170,10 @@ def f1(predictions, ground_truth):
     Outputs:
         - f1: type nd.ndarry of length c where c is the number of classes
     '''
-    
+
     raise NotImplementedError
     return f1
+
 
 def k_fold_validation(features, ground_truth, classifier, k=2):
     '''
@@ -158,25 +194,25 @@ def k_fold_validation(features, ground_truth, classifier, k=2):
         - sigma_metrics: np.ndarray, each value is the standard deviation of 
         the performance metrics [precision, recall, f1_score]
     '''
-    
-    #split data
+
+    # split data
     ### YOUR CODE HERE ###
-    
-    #go through each partition and use it as a test set.
+
+    # go through each partition and use it as a test set.
     for partition_no in range(k):
-        #determine test and train sets
+        # determine test and train sets
         ### YOUR CODE HERE###
-        
-        #fit model to training data and perform predictions on the test set
+
+        # fit model to training data and perform predictions on the test set
         classifier.fit(train_features, train_classes)
         predictions = classifier.predict(test_features)
-        
-        #calculate performance metrics
+
+        # calculate performance metrics
         ### YOUR CODE HERE###
-    
-    #perform statistical analyses on metrics
+
+    # perform statistical analyses on metrics
     ### YOUR CODE HERE###
-    
+
     raise NotImplementedError
     return avg_metrics, sigma_metrics
 
@@ -207,7 +243,8 @@ def transfer_learning(train_set, eval_set, test_set, model, parameters):
     '''
     raise NotImplementedError
     return model, metrics
-    
+
+
 def accelerated_learning(train_set, eval_set, test_set, model, parameters):
     '''
     Implement and perform accelerated transfer learning here.
@@ -233,17 +270,15 @@ def accelerated_learning(train_set, eval_set, test_set, model, parameters):
     raise NotImplementedError
     return model, metrics
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     path = 'small_flower_dataset'
     model = load_model()
     dataset = load_data(path)
     train_eval_test = split_data()
 
-    
     model, metrics = transfer_learning()
-    
+
     model, metrics = accelerated_learning()
-    
-    
+
 #########################  CODE GRAVEYARD  #############################
