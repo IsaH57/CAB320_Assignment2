@@ -45,6 +45,7 @@ def load_data(path):
     
     Insert a more detailed description here. TODO
     '''
+
     classes = os.listdir(path)
     data = []
     for i, class_name in enumerate(classes):
