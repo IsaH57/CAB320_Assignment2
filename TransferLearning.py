@@ -18,6 +18,7 @@ import numpy as np
 import keras.applications as ka
 import keras
 import tensorflow as tf
+import cv2
     
 def my_team():
     '''
@@ -44,7 +45,18 @@ def load_data(path):
     
     Insert a more detailed description here. TODO
     '''
-    raise NotImplementedError
+    classes = os.listdir(path)
+    data = []
+    for i, class_name in enumerate(classes):
+        class_path = os.path.join(path, class_name)
+        class_images = os.listdir(class_path)
+        for image_name in class_images:
+            image_path = os.path.join(class_path, image_name)
+            image = cv2.imread(image_path)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            data.append((image, i))
+    data = np.array(data)
+    return data
     
     
 def split_data(X, Y, train_fraction, randomize=False, eval_set=True):
@@ -221,9 +233,10 @@ def accelerated_learning(train_set, eval_set, test_set, model, parameters):
     return model, metrics
 
 if __name__ == "__main__":
-    
+
+    path = 'small_flower_dataset'
     model = load_model()
-    dataset = load_data()
+    dataset = load_data(path)
     train_eval_test = split_data()
 
     
