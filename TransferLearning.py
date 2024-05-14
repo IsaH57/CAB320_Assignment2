@@ -13,12 +13,14 @@ Hopefully without introducing new bugs.
 
 ### LIBRARY IMPORTS HERE ###
 import os
-import numpy as np
-import keras.applications as ka
-import keras
-import tensorflow as tf
 import cv2
-from keras.src.layers import Dense
+import keras
+import random
+import numpy as np
+import tensorflow as tf
+from imutils import paths
+from keras.src.utils import img_to_array
+import matplotlib.pyplot as plt
 
 
 def my_team():
@@ -36,9 +38,18 @@ def load_model():
     Load in a model using the tf.keras.applications model and return it.
     Insert a more detailed description here TODO
     '''
-    model = tf.keras.applications.MobileNetV2()
+
     num_classes = 5
-    model.layers[-1] = Dense(num_classes, activation='softmax')
+    base_model = tf.keras.applications.MobileNetV2(include_top=False, input_shape=(224, 224, 3))
+    # Freeze the layers of the base model
+    base_model.trainable = False
+
+    # Add new output layer
+    x = base_model.output
+    x = tf.keras.layers.GlobalAveragePooling2D()(x)
+    output = tf.keras.layers.Dense(num_classes, activation='softmax')(x)
+
+    model = tf.keras.Model(inputs=base_model.input, outputs=output)
     return model
 
 
@@ -48,25 +59,26 @@ def load_data(path):
     to the home directory the dataset is found in. Should return a numpy array
     with paired images and class labels.
     '''
-    classes = os.listdir(path)
-    images = []
-    labels = []
-    data = []
-    image_size=(224, 224)
-    for i, class_name in enumerate(classes):
 
-        class_path = os.path.join(path, class_name)
-        class_images = os.listdir(class_path)
-        for image_name in class_images:
-            image_path = os.path.join(class_path, image_name)
-            image = cv2.imread(image_path)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            image = cv2.resize(image, image_size)
-            image = np.array(image)
-            images.append(image)
-            labels.append(class_name)
-            data.append((image, class_name))
-    return data
+    imagePaths = sorted(list(paths.list_images(path)))
+    class_to_int = {'daisy': 0, 'dandelion': 1, 'roses': 2, 'sunflowers': 3, 'tulips': 4}  # TODO generalize?
+
+    data = []
+    labels = []
+    image_dims = (224, 224, 3)
+
+    for imagePath in imagePaths:
+        image = cv2.imread(imagePath)
+        image = cv2.resize(image, (image_dims[1], image_dims[0]))
+        image = img_to_array(image)
+        data.append(image)
+        label = imagePath.split(os.path.sep)[-2]
+        int_label = class_to_int[label]
+        labels.append(int_label)
+
+    data = np.array(data, dtype="float") / 255.0
+    labels = np.array(labels)
+    return data, labels
 
 
 def split_data(X, Y, train_fraction, randomize=False, eval_set=True):
@@ -88,7 +100,7 @@ def split_data(X, Y, train_fraction, randomize=False, eval_set=True):
     """
     num_samples = len(X)
     train_samples = int(num_samples * train_fraction)
-    test_samples = num_samples - train_samples
+    val_test_samples = int(num_samples * (num_samples - train_samples) / 2)
 
     if randomize:
         indices = np.random.permutation(num_samples)
@@ -97,15 +109,19 @@ def split_data(X, Y, train_fraction, randomize=False, eval_set=True):
 
     train_X = X[:train_samples]
     train_Y = Y[:train_samples]
-    test_X = X[train_samples:train_samples + test_samples]
-    test_Y = Y[train_samples:train_samples + test_samples]
+    test_X = X[train_samples:train_samples + val_test_samples]
+    test_Y = Y[train_samples:train_samples + val_test_samples]
+    eval_X = X[train_samples + val_test_samples:]
+    eval_Y = Y[train_samples + val_test_samples:]
+
+    train = (train_X, train_Y)
+    test = (test_X, test_Y)
+    eval = (eval_X, eval_Y)
 
     if eval_set:
-        eval_X = X[train_samples + test_samples:]
-        eval_Y = Y[train_samples + test_samples:]
-        return train_X, train_Y, test_X, test_Y, eval_X, eval_Y
+        return train, test, eval
     else:
-        return train_X, train_Y, test_X, test_Y
+        return train, test
 
 
 def confusion_matrix(predictions, ground_truth, plot=False, all_classes=None):
@@ -199,13 +215,13 @@ def k_fold_validation(features, ground_truth, classifier, k=2):
     ### YOUR CODE HERE ###
 
     # go through each partition and use it as a test set.
-    for partition_no in range(k):
+    #for partition_no in range(k):
         # determine test and train sets
         ### YOUR CODE HERE###
 
         # fit model to training data and perform predictions on the test set
-        classifier.fit(train_features, train_classes)
-        predictions = classifier.predict(test_features)
+        #classifier.fit(train_features, train_classes)
+        #predictions = classifier.predict(test_features)
 
         # calculate performance metrics
         ### YOUR CODE HERE###
@@ -241,9 +257,44 @@ def transfer_learning(train_set, eval_set, test_set, model, parameters):
             model on the test_set (list of np.ndarray)
 
     '''
-    raise NotImplementedError
+
+    learning_rate, momentum, nesterov = parameters
+    metrics = ['accuracy']
+    optimizer = tf.keras.optimizers.SGD(
+        learning_rate=learning_rate,
+        momentum=momentum,
+        nesterov=nesterov
+    )
+    model.compile(
+        optimizer=optimizer,
+        loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+        metrics=metrics)
+    history = model.fit(
+        x=train_set[0],
+        y=train_set[1],
+        validation_data=eval_set,
+        epochs=30
+    )
+    plot_learning_curves(history)
     return model, metrics
 
+def plot_learning_curves(history):
+    # summarize history for accuracy
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.title('model accuracy')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
+    # summarize history for loss
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.show()
 
 def accelerated_learning(train_set, eval_set, test_set, model, parameters):
     '''
@@ -272,13 +323,17 @@ def accelerated_learning(train_set, eval_set, test_set, model, parameters):
 
 
 if __name__ == "__main__":
+    # pass
+
+    # train model
     path = 'small_flower_dataset'
     model = load_model()
-    dataset = load_data(path)
-    train_eval_test = split_data()
+    data, labels = load_data(path)
+    train, test, eval = split_data(data, labels, 0.8, False, True)
 
-    model, metrics = transfer_learning()
+    model, metrics = transfer_learning(train, test, eval, model, (0.01, 0.0, False))
 
-    model, metrics = accelerated_learning()
+
+    #model, metrics = accelerated_learning()
 
 #########################  CODE GRAVEYARD  #############################
