@@ -340,7 +340,6 @@ if __name__ == "__main__":
     model, metrics = transfer_learning(train, test, eval, model, (0.01, 0.0, False))
 
     # Task 8: Experiment with 3 different orders of magnitude for the learning rate.
-
     #model_small_lr, metrics_small_lr = transfer_learning(train, test, eval, model, (0.001, 0.0, False))
     #model_medium_lr, metrics_medium_lr = transfer_learning(train, test, eval, model, (0.1, 0.0, False))
     #model_large_lr, metrics_large_lr = transfer_learning(train, test, eval, model, (1, 0.0, False))
