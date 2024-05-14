@@ -19,8 +19,8 @@ import random
 import numpy as np
 import tensorflow as tf
 from imutils import paths
-from keras.src.utils import img_to_array
 import matplotlib.pyplot as plt
+from keras.src.utils import img_to_array
 
 
 def my_team():
@@ -63,6 +63,8 @@ def load_data(path):
     imagePaths = sorted(list(paths.list_images(path)))
     class_to_int = {'daisy': 0, 'dandelion': 1, 'roses': 2, 'sunflowers': 3, 'tulips': 4}  # TODO generalize?
 
+    random.seed(42)
+    random.shuffle(imagePaths)
     data = []
     labels = []
     image_dims = (224, 224, 3)
@@ -99,8 +101,9 @@ def split_data(X, Y, train_fraction, randomize=False, eval_set=True):
                If eval_set is False, returns (train_X, train_Y, test_X, test_Y).
     """
     num_samples = len(X)
-    train_samples = int(num_samples * train_fraction)
-    val_test_samples = int(num_samples * (num_samples - train_samples) / 2)
+    train_samples = int(num_samples * 0.8)
+    test_samples = int(num_samples * 0.1)
+    eval_samples = num_samples - train_samples - test_samples
 
     if randomize:
         indices = np.random.permutation(num_samples)
@@ -109,10 +112,10 @@ def split_data(X, Y, train_fraction, randomize=False, eval_set=True):
 
     train_X = X[:train_samples]
     train_Y = Y[:train_samples]
-    test_X = X[train_samples:train_samples + val_test_samples]
-    test_Y = Y[train_samples:train_samples + val_test_samples]
-    eval_X = X[train_samples + val_test_samples:]
-    eval_Y = Y[train_samples + val_test_samples:]
+    test_X = X[train_samples:train_samples + test_samples]
+    test_Y = Y[train_samples:train_samples + test_samples]
+    eval_X = X[train_samples + test_samples:]
+    eval_Y = Y[train_samples + test_samples:]
 
     train = (train_X, train_Y)
     test = (test_X, test_Y)
@@ -295,6 +298,8 @@ def plot_learning_curves(history):
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
     plt.show()
+    # summarize history for errors
+
 
 def accelerated_learning(train_set, eval_set, test_set, model, parameters):
     '''
@@ -325,15 +330,18 @@ def accelerated_learning(train_set, eval_set, test_set, model, parameters):
 if __name__ == "__main__":
     # pass
 
-    # train model
     path = 'small_flower_dataset'
     model = load_model()
     data, labels = load_data(path)
     train, test, eval = split_data(data, labels, 0.8, False, True)
 
+    # Task 7: Plot the training and validation errors and accuracies of standard transfer learning
     model, metrics = transfer_learning(train, test, eval, model, (0.01, 0.0, False))
 
+    # Task 8: Experiment with 3 different orders of magnitude for the learning rate.
 
-    #model, metrics = accelerated_learning()
+    #model_small_lr, metrics_small_lr = transfer_learning(train, test, eval, model, (0.001, 0.0, False))
+    #model_medium_lr, metrics_medium_lr = transfer_learning(train, test, eval, model, (0.1, 0.0, False))
+    #model_large_lr, metrics_large_lr = transfer_learning(train, test, eval, model, (1, 0.0, False))
 
 #########################  CODE GRAVEYARD  #############################
