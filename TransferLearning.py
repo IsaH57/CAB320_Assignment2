@@ -101,8 +101,8 @@ def split_data(X, Y, train_fraction, randomize=False, eval_set=True):
                If eval_set is False, returns (train_X, train_Y, test_X, test_Y).
     """
     num_samples = len(X)
-    train_samples = int(num_samples * 0.8)
-    test_samples = int(num_samples * 0.1)
+    train_samples = int(num_samples * train_fraction)
+    test_samples = int(num_samples * ((1-train_fraction)/2))
     eval_samples = num_samples - train_samples - test_samples
 
     if randomize:
