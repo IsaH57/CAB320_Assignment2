@@ -63,7 +63,7 @@ def load_data(path):
         path (str): The path to the data directory.
 
     Returns:
-        tuple: A numpy array containing the data and a numpy array containing the labels.
+        tuple: A numpy array containing the data and the labels.
     """
 
     imagePaths = sorted(list(paths.list_images(path)))
