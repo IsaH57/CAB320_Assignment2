@@ -22,7 +22,7 @@ from imutils import paths
 import matplotlib.pyplot as plt
 from keras.src.utils import img_to_array
 
-
+image_dims = (224, 224, 3)
 def my_team():
     '''
     Return the list of the team members of this assignment submission as a list
@@ -34,10 +34,12 @@ def my_team():
 
 
 def load_model():
-    '''
-    Load in a model using the tf.keras.applications model and return it.
-    Insert a more detailed description here TODO
-    '''
+    """
+    Load a pre-trained MobileNetV2 model, freeze its layers, add a new output layer, and return the model.
+
+    Returns:
+        tf.keras.Model: A TensorFlow Keras Model with the loaded MobileNetV2 base model and a new output layer.
+    """
 
     num_classes = 5
     base_model = tf.keras.applications.MobileNetV2(include_top=False, input_shape=(224, 224, 3))
@@ -54,33 +56,91 @@ def load_model():
 
 
 def load_data(path):
-    '''
-    Load in the dataset from its home path. Path should be a string of the path
-    to the home directory the dataset is found in. Should return a numpy array
-    with paired images and class labels.
-    '''
+    """
+    Load the data from the specified path and return the data and labels as numpy arrays.
+
+    Args:
+        path (str): The path to the data directory.
+
+    Returns:
+        tuple: A numpy array containing the data and the labels.
+    """
 
     imagePaths = sorted(list(paths.list_images(path)))
-    class_to_int = {'daisy': 0, 'dandelion': 1, 'roses': 2, 'sunflowers': 3, 'tulips': 4}  # TODO generalize?
-
+    class_to_int = map_classes_to_int(path)
     random.seed(42)
     random.shuffle(imagePaths)
-    data = []
-    labels = []
-    image_dims = (224, 224, 3)
+    combined = []
 
     for imagePath in imagePaths:
         image = cv2.imread(imagePath)
         image = cv2.resize(image, (image_dims[1], image_dims[0]))
         image = img_to_array(image)
-        data.append(image)
         label = imagePath.split(os.path.sep)[-2]
         int_label = class_to_int[label]
+        combined.append(np.append(image, int_label))  # Append flattened image data and label
+
+    combined = np.array(combined)
+    #combined[:, :-1] = combined[:, :-1] / 255.0
+
+    ###REMOVE
+    data, labels = split_combined_numpy(combined)
+
+    # Reshape the data to the original shape
+    data = data.reshape(data.shape[0], 224, 224, 3)
+
+    # Display the images and labels
+    plt.figure(figsize=(10, 10))
+    for i in range(9):  # Display the first 9 images
+        plt.subplot(3, 3, i + 1)
+        plt.imshow(data[i])
+        plt.title(f'Label: {labels[i]}')
+        plt.axis('off')
+
+    plt.show()
+    ###
+    return combined
+
+def split_combined_numpy(combined):
+    """
+    Split the combined array into features (data) and labels, matching the format of data and labels returned by the original function.
+
+    Args:
+        combined (numpy.ndarray): The combined array containing both features and labels.
+
+    Returns:
+        tuple: A tuple containing features (data) and labels as separate numpy arrays.
+    """
+
+    data = []
+    labels = []
+    image_dims = (224, 224, 3)
+    for row in combined:
+        image = row[:-1].reshape(image_dims)  # Reshape flattened image data to original shape
+        int_label = int(row[-1])
         labels.append(int_label)
+        data.append(image)
 
     data = np.array(data, dtype="float") / 255.0
     labels = np.array(labels)
     return data, labels
+
+def map_classes_to_int(path):
+    """
+    Map class names to numbers based on the folder structure in the given path.
+
+    Args:
+        path (str): The path to the directory containing class folders.
+
+    Returns:
+        dict: A dictionary mapping class names to numbers.
+    """
+    class_to_int = {}
+    classes = sorted(os.listdir(path))
+    for i, class_name in enumerate(classes):
+        class_to_int[class_name] = i
+    return class_to_int
+
 
 
 def split_data(X, Y, train_fraction, randomize=False, eval_set=True):
@@ -242,7 +302,7 @@ def transfer_learning(train_set, eval_set, test_set, model, parameters):
     '''
     Implement and perform standard transfer learning here.
 
-    Inputs:
+    Args:
         - train_set: list or tuple of the training images and labels in the
             form (images, labels) for training the classifier
         - eval_set: list or tuple of the images and labels used in evaluating
@@ -254,7 +314,7 @@ def transfer_learning(train_set, eval_set, test_set, model, parameters):
             (learning_rate, momentum, nesterov)
 
 
-    Outputs:
+    Returns:
         - model : an instance of tf.keras.applications.MobileNetV2
         - metrics : list of classwise recall, precision, and f1 scores of the 
             model on the test_set (list of np.ndarray)
@@ -282,6 +342,12 @@ def transfer_learning(train_set, eval_set, test_set, model, parameters):
     return model, metrics
 
 def plot_learning_curves(history):
+    """
+    A function that plots the learning curves of a model based on the training history.
+
+    Args:
+        - history: the training history of the model
+    """
     # summarize history for accuracy
     plt.plot(history.history['accuracy'])
     plt.plot(history.history['val_accuracy'])
@@ -332,7 +398,7 @@ if __name__ == "__main__":
 
     path = 'small_flower_dataset'
     model = load_model()
-    data, labels = load_data(path)
+    data, labels = split_combined_numpy(load_data(path))
     train, test, eval = split_data(data, labels, 0.8, False, True)
 
     # Task 7: Plot the training and validation errors and accuracies of standard transfer learning
