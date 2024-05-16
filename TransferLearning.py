@@ -316,7 +316,7 @@ def transfer_learning(train_set, eval_set, test_set, model, parameters):
 
     Returns:
         - model : an instance of tf.keras.applications.MobileNetV2
-        - metrics : list of classwise recall, precision, and f1 scores of the 
+        - metrics : list of class-wise recall, precision, and f1 scores of the
             model on the test_set (list of np.ndarray)
 
     '''
