@@ -43,8 +43,10 @@ def load_model():
 
     num_classes = 5
     base_model = tf.keras.applications.MobileNetV2(include_top=False, input_shape=(224, 224, 3))
+
+    #Enable for Task 14:
     # Freeze the layers of the base model
-    base_model.trainable = False
+    # base_model.trainable = False
 
     # Add new output layer
     x = base_model.output
@@ -389,7 +391,25 @@ def accelerated_learning(train_set, eval_set, test_set, model, parameters):
             model on the test_set (list of np.ndarray)
 
     '''
-    raise NotImplementedError
+
+    learning_rate, momentum, nesterov = parameters
+    metrics = ['accuracy']
+    optimizer = tf.keras.optimizers.SGD(
+        learning_rate=learning_rate,
+        momentum=momentum,
+        nesterov=nesterov
+    )
+    model.compile(
+        optimizer=optimizer,
+        loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+        metrics=metrics)
+    history = model.fit(
+        x=train_set[0],
+        y=train_set[1],
+        validation_data=eval_set,
+        epochs=30
+    )
+    plot_learning_curves(history)
     return model, metrics
 
 
@@ -408,5 +428,9 @@ if __name__ == "__main__":
     #model_small_lr, metrics_small_lr = transfer_learning(train, test, eval, model, (0.001, 0.0, False))
     #model_medium_lr, metrics_medium_lr = transfer_learning(train, test, eval, model, (0.1, 0.0, False))
     #model_large_lr, metrics_large_lr = transfer_learning(train, test, eval, model, (1, 0.0, False))
+
+    # Task 14:
+    # Remember to enable steps in load_data()
+    #model, metrics = accelerated_learning(train, test, eval, model, (0.01, 0.0, False))
 
 #########################  CODE GRAVEYARD  #############################
