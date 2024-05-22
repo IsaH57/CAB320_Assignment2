@@ -22,6 +22,8 @@ from imutils import paths
 import matplotlib.pyplot as plt
 from keras.src.utils import img_to_array
 
+from tensorflow.python.client import device_lib
+
 image_dims = (224, 224, 3)
 def my_team():
     '''
@@ -48,7 +50,7 @@ def load_model():
     # Freeze the layers of the base model
     # base_model.trainable = False
 
-    # Add new output layer
+    # Task 3: Replace output layer to match number of classes
     x = base_model.output
     x = tf.keras.layers.GlobalAveragePooling2D()(x)
     output = tf.keras.layers.Dense(num_classes, activation='softmax')(x)
@@ -323,6 +325,9 @@ def transfer_learning(train_set, eval_set, test_set, model, parameters):
 
     '''
 
+    tf.config.experimental.set_visible_devices(tf.config.experimental.list_physical_devices('GPU')[0], 'GPU')
+    print(device_lib.list_local_devices())
+
     learning_rate, momentum, nesterov = parameters
     metrics = ['accuracy']
     optimizer = tf.keras.optimizers.SGD(
@@ -340,6 +345,8 @@ def transfer_learning(train_set, eval_set, test_set, model, parameters):
         validation_data=eval_set,
         epochs=30
     )
+
+    # Task 7: Plot the training and validation errors and accuracies of standard transfer learning
     plot_learning_curves(history)
     return model, metrics
 
@@ -415,13 +422,17 @@ def accelerated_learning(train_set, eval_set, test_set, model, parameters):
 
 if __name__ == "__main__":
     # pass
-
+    # Task 1: Use the small_flower_datatset
     path = 'small_flower_dataset'
+
+    # Task 2: Download a pre-trained MobileNetV2 model
     model = load_model()
+
+    # Task 4: Prepare the data for standard transfer learning
     data, labels = split_combined_numpy(load_data(path))
     train, test, eval = split_data(data, labels, 0.8, False, True)
 
-    # Task 7: Plot the training and validation errors and accuracies of standard transfer learning
+    # Task 5: Compile and train model with SGD optimizer
     model, metrics = transfer_learning(train, test, eval, model, (0.01, 0.0, False))
 
     # Task 8: Experiment with 3 different orders of magnitude for the learning rate.
