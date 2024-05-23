@@ -214,22 +214,34 @@ def confusion_matrix(predictions, ground_truth, plot=False, all_classes=None):
               each column to a prediction of a unique class by a classifier
     '''
 
-    num_classes = len(np.unique(ground_truth))
-    cm = np.zeros((num_classes, num_classes), dtype=int)
+    # Ensure predictions and ground_truth are numpy arrays
+    predictions = np.array(predictions)
+    ground_truth = np.array(ground_truth)
 
-    for true, pred in zip(ground_truth, predictions):
-        cm[true, pred] += 1
+    # Get unique classes from ground_truth if not provided
+    if all_classes is None:
+        all_classes = np.unique(ground_truth)
+
+    # Initialize confusion matrix
+    cm = np.zeros((len(all_classes), len(all_classes)))
+
+    # Populate confusion matrix
+    for pred, true in zip(predictions, ground_truth):
+        if np.isscalar(pred):
+            cm[true, pred] += 1
+        else:
+            cm[true, pred[0]] += 1  # Use the first element of pred if it's a list or array
 
     if plot:
         plt.figure(figsize=(10, 8))
-        plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+        plt.imshow(cm, interpolation='nearest', cmap='Blues')
+        plt.xlabel('Predicted')
+        plt.ylabel('Actual')
         plt.title('Confusion Matrix')
         plt.colorbar()
-        tick_marks = np.arange(len(np.unique(ground_truth)))
-        plt.xticks(tick_marks, np.unique(ground_truth))
-        plt.yticks(tick_marks, np.unique(ground_truth))
-        plt.ylabel('True label')
-        plt.xlabel('Predicted label')
+        tick_marks = np.arange(len(all_classes))
+        plt.xticks(tick_marks, all_classes)
+        plt.yticks(tick_marks, all_classes)
         plt.show()
 
     return cm
@@ -538,7 +550,43 @@ if __name__ == "__main__":
     train, test, eval = split_data(data, labels, 0.8, True, True)
 
     # Task 5: Compile and train model with SGD optimizer
-    model, metrics = transfer_learning(train, test, eval, model, (0.01, 0.0, False))
+    # model, metrics = transfer_learning(train, test, eval, model, (0.01, 0.0, False))
+    
+    # Task 9
+    test_predictions = model.predict(test[0])
+    test_predictions_classes = np.argmax(test_predictions, axis=1)
+    conf_matrix = confusion_matrix(test_predictions_classes, test[1], plot=True)
+    print("Confusion Matrix:")
+    print(conf_matrix)
+    
+    # Task 10
+    precision_scores = precision(test_predictions_classes, test[1])
+    recall_scores = recall(test_predictions_classes, test[1])
+    f1_scores = f1(test_predictions_classes, test[1])
+
+    print("Precision Scores:")
+    print(precision_scores)
+    print("Recall Scores:")
+    print(recall_scores)
+    print("F1 Scores:")
+    print(f1_scores)
+    
+    # Task 11
+    # k = 3
+    # avg_metrics, sigma_metrics = k_fold_validation(data, labels, model, k)
+    # print("Average Metrics (k=3):")
+    # print(avg_metrics)
+    # print("Sigma Metrics (k=3):")
+    # print(sigma_metrics)
+    
+    # # Repeat for two different values of k
+    # k_values = [5, 10]
+    # for k in k_values:
+    #     avg_metrics, sigma_metrics = k_fold_validation(data, labels, model, k)
+    #     print(f"Average Metrics (k={k}):")
+    #     print(avg_metrics)
+    #     print(f"Sigma Metrics (k={k}):")
+    #     print(sigma_metrics)
 
     # Task 8: Experiment with 3 different orders of magnitude for the learning rate.
     # model_small_lr, metrics_small_lr = transfer_learning(train, test, eval, model, (0.001, 0.0, False))
@@ -547,5 +595,4 @@ if __name__ == "__main__":
 
     # Task 14:
     # model, metrics = accelerated_learning(train, test, eval, model, (0.01, 0.0, False))
-
 #########################  CODE GRAVEYARD  #############################
