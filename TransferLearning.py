@@ -214,17 +214,22 @@ def confusion_matrix(predictions, ground_truth, plot=False, all_classes=None):
               each column to a prediction of a unique class by a classifier
     '''
 
-    from sklearn.metrics import confusion_matrix as cm
-    import seaborn as sns
+    num_classes = len(np.unique(ground_truth))
+    cm = np.zeros((num_classes, num_classes), dtype=int)
 
-    cm = cm(ground_truth, predictions)
+    for true, pred in zip(ground_truth, predictions):
+        cm[true, pred] += 1
 
     if plot:
         plt.figure(figsize=(10, 8))
-        sns.heatmap(cm_result, annot=True, fmt='d', cmap='Blues')
-        plt.xlabel('Predicted')
-        plt.ylabel('Actual')
+        plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
         plt.title('Confusion Matrix')
+        plt.colorbar()
+        tick_marks = np.arange(len(np.unique(ground_truth)))
+        plt.xticks(tick_marks, np.unique(ground_truth))
+        plt.yticks(tick_marks, np.unique(ground_truth))
+        plt.ylabel('True label')
+        plt.xlabel('Predicted label')
         plt.show()
 
     return cm
@@ -239,8 +244,15 @@ def precision(predictions, ground_truth):
         - precision: type np.ndarray of length c,
                      values are the precision for each class
     '''
-    from sklearn.metrics import precision_score
-    return precision_score(ground_truth, predictions, average=None)
+    num_classes = len(np.unique(ground_truth))
+    precision = np.zeros(num_classes)
+
+    for cls in range(num_classes):
+        true_positives = np.sum((predictions == cls) & (ground_truth == cls))
+        all_positives = np.sum(predictions == cls)
+        precision[cls] = true_positives / max(all_positives, 1)
+
+    return precision
 
 
 def recall(predictions, ground_truth):
@@ -252,8 +264,15 @@ def recall(predictions, ground_truth):
         - recall: type np.ndarray of length c,
                      values are the recall for each class
     '''
-    from sklearn.metrics import recall_score
-    return recall_score(ground_truth, predictions, average=None)
+    num_classes = len(np.unique(ground_truth))
+    recall = np.zeros(num_classes)
+
+    for cls in range(num_classes):
+        true_positives = np.sum((predictions == cls) & (ground_truth == cls))
+        all_actual = np.sum(ground_truth == cls)
+        recall[cls] = true_positives / max(all_actual, 1)
+
+    return recall
 
 
 def f1(predictions, ground_truth):
@@ -265,8 +284,11 @@ def f1(predictions, ground_truth):
         - f1: type nd.ndarry of length c where c is the number of classes
     '''
 
-    from sklearn.metrics import f1_score
-    return f1_score(ground_truth, predictions, average=None)
+    prec = precision(predictions, ground_truth)
+    rec = recall(predictions, ground_truth)
+    f1 = 2 * (prec * rec) / (prec + rec + 1e-9)  # avoid division by zero
+
+    return f1
 
 
 def k_fold_validation(features, ground_truth, classifier, k=2):
