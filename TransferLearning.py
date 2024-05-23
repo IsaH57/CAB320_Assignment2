@@ -22,9 +22,9 @@ from imutils import paths
 import matplotlib.pyplot as plt
 from keras.src.utils import img_to_array
 
-from tensorflow.python.client import device_lib
-
 image_dims = (224, 224, 3)
+
+
 def my_team():
     '''
     Return the list of the team members of this assignment submission as a list
@@ -37,18 +37,13 @@ def my_team():
 
 def load_model():
     """
-    Load a pre-trained MobileNetV2 model, freeze its layers, add a new output layer, and return the model.
+    Load a pre-trained MobileNetV2 model, add a new output layer, and return the model.
 
     Returns:
         tf.keras.Model: A TensorFlow Keras Model with the loaded MobileNetV2 base model and a new output layer.
     """
-
     num_classes = 5
     base_model = tf.keras.applications.MobileNetV2(include_top=False, input_shape=(224, 224, 3))
-
-    #Enable for Task 14:
-    # Freeze the layers of the base model
-    # base_model.trainable = False
 
     # Task 3: Replace output layer to match number of classes
     x = base_model.output
@@ -56,6 +51,27 @@ def load_model():
     output = tf.keras.layers.Dense(num_classes, activation='softmax')(x)
 
     model = tf.keras.Model(inputs=base_model.input, outputs=output)
+    return model
+
+
+def freeze_layers(model):
+    """
+    Freeze all of the layers in the model except the last one.
+
+    Args:
+        tf.keras.Model: A TensorFlow Keras Model
+
+    Returns:
+        tf.keras.Model: A TensorFlow Keras Model with the base model freezed
+
+    """
+    # Get the total number of layers in the model
+    num_layers = len(model.layers)
+
+    # Freeze all layers except the last one
+    for layer in model.layers[:-1]:
+        layer.trainable = False
+
     return model
 
 
@@ -69,7 +85,6 @@ def load_data(path):
     Returns:
         tuple: A numpy array containing the data and the labels.
     """
-
     imagePaths = sorted(list(paths.list_images(path)))
     class_to_int = map_classes_to_int(path)
     random.seed(42)
@@ -77,33 +92,17 @@ def load_data(path):
     combined = []
 
     for imagePath in imagePaths:
-        image = cv2.imread(imagePath)
-        image = cv2.resize(image, (image_dims[1], image_dims[0]))
-        image = img_to_array(image)
-        label = imagePath.split(os.path.sep)[-2]
-        int_label = class_to_int[label]
-        combined.append(np.append(image, int_label))  # Append flattened image data and label
+        image = cv2.imread(imagePath)[..., ::-1]  # Convert BGR to RGB
+        image = cv2.resize(image, (image_dims[1], image_dims[0]))  # Resize image
+        image = img_to_array(image)  # Convert image to array
+        label = imagePath.split(os.path.sep)[-2]  # Get label from path
+        int_label = class_to_int[label]  # Convert label to integer
+        combined.append(np.append(image, int_label))
 
     combined = np.array(combined)
-    #combined[:, :-1] = combined[:, :-1] / 255.0
 
-    ###REMOVE
-    data, labels = split_combined_numpy(combined)
-
-    # Reshape the data to the original shape
-    data = data.reshape(data.shape[0], 224, 224, 3)
-
-    # Display the images and labels
-    plt.figure(figsize=(10, 10))
-    for i in range(9):  # Display the first 9 images
-        plt.subplot(3, 3, i + 1)
-        plt.imshow(data[i])
-        plt.title(f'Label: {labels[i]}')
-        plt.axis('off')
-
-    plt.show()
-    ###
     return combined
+
 
 def split_combined_numpy(combined):
     """
@@ -115,19 +114,21 @@ def split_combined_numpy(combined):
     Returns:
         tuple: A tuple containing features (data) and labels as separate numpy arrays.
     """
-
     data = []
     labels = []
     image_dims = (224, 224, 3)
+
     for row in combined:
-        image = row[:-1].reshape(image_dims)  # Reshape flattened image data to original shape
+        image = row[:-1].reshape(image_dims)  # Reshape image data to original shape
         int_label = int(row[-1])
         labels.append(int_label)
         data.append(image)
 
     data = np.array(data, dtype="float") / 255.0
     labels = np.array(labels)
+
     return data, labels
+
 
 def map_classes_to_int(path):
     """
@@ -144,7 +145,6 @@ def map_classes_to_int(path):
     for i, class_name in enumerate(classes):
         class_to_int[class_name] = i
     return class_to_int
-
 
 
 def split_data(X, Y, train_fraction, randomize=False, eval_set=True):
@@ -166,8 +166,7 @@ def split_data(X, Y, train_fraction, randomize=False, eval_set=True):
     """
     num_samples = len(X)
     train_samples = int(num_samples * train_fraction)
-    test_samples = int(num_samples * ((1-train_fraction)/2))
-    eval_samples = num_samples - train_samples - test_samples
+    test_samples = int(num_samples * ((1 - train_fraction) / 2))
 
     if randomize:
         indices = np.random.permutation(num_samples)
@@ -178,14 +177,14 @@ def split_data(X, Y, train_fraction, randomize=False, eval_set=True):
     train_Y = Y[:train_samples]
     test_X = X[train_samples:train_samples + test_samples]
     test_Y = Y[train_samples:train_samples + test_samples]
-    eval_X = X[train_samples + test_samples:]
-    eval_Y = Y[train_samples + test_samples:]
 
     train = (train_X, train_Y)
     test = (test_X, test_Y)
-    eval = (eval_X, eval_Y)
 
     if eval_set:
+        eval_X = X[train_samples + test_samples:]
+        eval_Y = Y[train_samples + test_samples:]
+        eval = (eval_X, eval_Y)
         return train, test, eval
     else:
         return train, test
@@ -282,16 +281,16 @@ def k_fold_validation(features, ground_truth, classifier, k=2):
     ### YOUR CODE HERE ###
 
     # go through each partition and use it as a test set.
-    #for partition_no in range(k):
-        # determine test and train sets
-        ### YOUR CODE HERE###
+    # for partition_no in range(k):
+    # determine test and train sets
+    ### YOUR CODE HERE###
 
-        # fit model to training data and perform predictions on the test set
-        #classifier.fit(train_features, train_classes)
-        #predictions = classifier.predict(test_features)
+    # fit model to training data and perform predictions on the test set
+    # classifier.fit(train_features, train_classes)
+    # predictions = classifier.predict(test_features)
 
-        # calculate performance metrics
-        ### YOUR CODE HERE###
+    # calculate performance metrics
+    ### YOUR CODE HERE###
 
     # perform statistical analyses on metrics
     ### YOUR CODE HERE###
@@ -317,70 +316,47 @@ def transfer_learning(train_set, eval_set, test_set, model, parameters):
         - parameters: list or tuple of parameters to use during training:
             (learning_rate, momentum, nesterov)
 
-
     Returns:
         - model : an instance of tf.keras.applications.MobileNetV2
         - metrics : list of classwise recall, precision, and f1 scores of the 
             model on the test_set (list of np.ndarray)
 
     '''
-
-    tf.config.experimental.set_visible_devices(tf.config.experimental.list_physical_devices('GPU')[0], 'GPU')
-    print(device_lib.list_local_devices())
-
     learning_rate, momentum, nesterov = parameters
     metrics = ['accuracy']
+
+    # set the optimizer
     optimizer = tf.keras.optimizers.SGD(
         learning_rate=learning_rate,
         momentum=momentum,
         nesterov=nesterov
     )
+
+    # compile the model
     model.compile(
         optimizer=optimizer,
         loss=tf.keras.losses.SparseCategoricalCrossentropy(),
         metrics=metrics)
+
+    # train the model
     history = model.fit(
         x=train_set[0],
         y=train_set[1],
         validation_data=eval_set,
-        epochs=30
+        epochs=15
     )
 
     # Task 7: Plot the training and validation errors and accuracies of standard transfer learning
-    plot_learning_curves(history)
+    plot_learning_curves(history, parameters)
+
     return model, metrics
-
-def plot_learning_curves(history):
-    """
-    A function that plots the learning curves of a model based on the training history.
-
-    Args:
-        - history: the training history of the model
-    """
-    # summarize history for accuracy
-    plt.plot(history.history['accuracy'])
-    plt.plot(history.history['val_accuracy'])
-    plt.title('model accuracy')
-    plt.ylabel('accuracy')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-    plt.show()
-    # summarize history for loss
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title('model loss')
-    plt.ylabel('loss')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-    plt.show()
-    # summarize history for errors
 
 
 def accelerated_learning(train_set, eval_set, test_set, model, parameters):
     '''
     Implement and perform accelerated transfer learning here.
 
-    Inputs:
+    Args:
         - train_set: list or tuple of the training images and labels in the
             form (images, labels) for training the classifier
         - eval_set: list or tuple of the images and labels used in evaluating
@@ -391,37 +367,75 @@ def accelerated_learning(train_set, eval_set, test_set, model, parameters):
         - parameters: list or tuple of parameters to use during training:
             (learning_rate, momentum, nesterov)
 
-
-    Outputs:
+    Returns:
         - model : an instance of tf.keras.applications.MobileNetV2
-        - metrics : list of classwise recall, precision, and f1 scores of the 
+        - metrics : list of classwise recall, precision, and f1 scores of the
             model on the test_set (list of np.ndarray)
 
     '''
+    # freeze the model base layers
+    model = freeze_layers(model)
 
     learning_rate, momentum, nesterov = parameters
     metrics = ['accuracy']
+
+    # set the optimizer
     optimizer = tf.keras.optimizers.SGD(
         learning_rate=learning_rate,
         momentum=momentum,
         nesterov=nesterov
     )
+
+    # compile the model
     model.compile(
         optimizer=optimizer,
         loss=tf.keras.losses.SparseCategoricalCrossentropy(),
         metrics=metrics)
+
+    # train the model
     history = model.fit(
         x=train_set[0],
         y=train_set[1],
         validation_data=eval_set,
         epochs=30
     )
-    plot_learning_curves(history)
+
+    plot_learning_curves(history, parameters)
+
     return model, metrics
 
 
+def plot_learning_curves(history, parameters):
+    """
+    A function that plots the learning curves of a model based on the training history.
+
+    Args:
+        - history: the training history of the model
+    """
+    learning_rate, momentum, nesterov = parameters
+
+    # summarize history for accuracy
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.title('model accuracy (learning rate: ' + str(learning_rate) + ' momentum: ' + str(momentum) + ')')
+    plt.ylabel('accuracy')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper left')
+    plt.savefig('accuracy_lr' + str(learning_rate) + '_mo' + str(momentum) + '.png')
+    plt.show()
+
+    # summarize history for loss
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('model loss (learning rate: ' + str(learning_rate) + ' momentum: ' + str(momentum) +')')
+    plt.ylabel('loss')
+    plt.xlabel('epoch')
+    plt.legend(['train', 'test'], loc='upper right')
+    plt.savefig('loss_lr' + str(learning_rate) + '_mo' + str(momentum) + '.png')
+    plt.show()
+
+
 if __name__ == "__main__":
-    # pass
     # Task 1: Use the small_flower_datatset
     path = 'small_flower_dataset'
 
@@ -430,18 +444,17 @@ if __name__ == "__main__":
 
     # Task 4: Prepare the data for standard transfer learning
     data, labels = split_combined_numpy(load_data(path))
-    train, test, eval = split_data(data, labels, 0.8, False, True)
+    train, test, eval = split_data(data, labels, 0.8, True, True)
 
     # Task 5: Compile and train model with SGD optimizer
     model, metrics = transfer_learning(train, test, eval, model, (0.01, 0.0, False))
 
     # Task 8: Experiment with 3 different orders of magnitude for the learning rate.
-    #model_small_lr, metrics_small_lr = transfer_learning(train, test, eval, model, (0.001, 0.0, False))
-    #model_medium_lr, metrics_medium_lr = transfer_learning(train, test, eval, model, (0.1, 0.0, False))
-    #model_large_lr, metrics_large_lr = transfer_learning(train, test, eval, model, (1, 0.0, False))
+    # model_small_lr, metrics_small_lr = transfer_learning(train, test, eval, model, (0.001, 0.0, False))
+    # model_medium_lr, metrics_medium_lr = transfer_learning(train, test, eval, model, (0.1, 0.0, False))
+    # model_large_lr, metrics_large_lr = transfer_learning(train, test, eval, model, (1, 0.0, False))
 
     # Task 14:
-    # Remember to enable steps in load_data()
-    #model, metrics = accelerated_learning(train, test, eval, model, (0.01, 0.0, False))
+    # model, metrics = accelerated_learning(train, test, eval, model, (0.01, 0.0, False))
 
 #########################  CODE GRAVEYARD  #############################
