@@ -427,7 +427,7 @@ def plot_learning_curves(history, parameters):
     # summarize history for loss
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
-    plt.title('model loss (learning rate: ' + str(learning_rate) + ' momentum: ' + str(momentum) +')')
+    plt.title('model loss (learning rate: ' + str(learning_rate) + ' momentum: ' + str(momentum) + ')')
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper right')
