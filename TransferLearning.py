@@ -214,7 +214,19 @@ def confusion_matrix(predictions, ground_truth, plot=False, all_classes=None):
               each column to a prediction of a unique class by a classifier
     '''
 
-    raise NotImplementedError
+    from sklearn.metrics import confusion_matrix as cm
+    import seaborn as sns
+
+    cm = cm(ground_truth, predictions)
+
+    if plot:
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(cm_result, annot=True, fmt='d', cmap='Blues')
+        plt.xlabel('Predicted')
+        plt.ylabel('Actual')
+        plt.title('Confusion Matrix')
+        plt.show()
+
     return cm
 
 
@@ -227,8 +239,8 @@ def precision(predictions, ground_truth):
         - precision: type np.ndarray of length c,
                      values are the precision for each class
     '''
-    raise NotImplementedError
-    return precision
+    from sklearn.metrics import precision_score
+    return precision_score(ground_truth, predictions, average=None)
 
 
 def recall(predictions, ground_truth):
@@ -240,8 +252,8 @@ def recall(predictions, ground_truth):
         - recall: type np.ndarray of length c,
                      values are the recall for each class
     '''
-    raise NotImplementedError
-    return recall
+    from sklearn.metrics import recall_score
+    return recall_score(ground_truth, predictions, average=None)
 
 
 def f1(predictions, ground_truth):
@@ -253,8 +265,8 @@ def f1(predictions, ground_truth):
         - f1: type nd.ndarry of length c where c is the number of classes
     '''
 
-    raise NotImplementedError
-    return f1
+    from sklearn.metrics import f1_score
+    return f1_score(ground_truth, predictions, average=None)
 
 
 def k_fold_validation(features, ground_truth, classifier, k=2):
@@ -295,7 +307,64 @@ def k_fold_validation(features, ground_truth, classifier, k=2):
     # perform statistical analyses on metrics
     ### YOUR CODE HERE###
 
-    raise NotImplementedError
+    # Initialize arrays to accumulate metrics across all folds
+    avg_cm = np.zeros((3, len(np.unique(ground_truth))))
+    avg_prec = np.zeros((k, len(np.unique(ground_truth))))
+    avg_rec = np.zeros((k, len(np.unique(ground_truth))))
+    avg_f1_score = np.zeros((k, len(np.unique(ground_truth))))
+
+    # split data
+    # Calculate fold size and shuffle the data
+    num_samples = len(features)
+    fold_size = num_samples // k
+    indices = np.arange(num_samples)
+    np.random.shuffle(indices)
+    shuffled_features = features[indices]
+    shuffled_ground_truth = ground_truth[indices]
+
+    # go through each partition and use it as a test set
+    for partition_no in range(k):
+        # determine test and train sets
+        start = partition_no * fold_size
+        end = (partition_no + 1) * fold_size if partition_no != k - 1 else num_samples
+        
+        test_features = shuffled_features[start:end]
+        test_classes = shuffled_ground_truth[start:end]
+        
+        train_features = np.concatenate((shuffled_features[:start], shuffled_features[end:]), axis=0)
+        train_classes = np.concatenate((shuffled_ground_truth[:start], shuffled_ground_truth[end:]), axis=0)
+        
+        # fit model to training data & perform predictions on the test set
+        classifier.fit(train_features, train_classes)
+        predictions = classifier.predict(test_features)
+        
+        # calculate performance metrics 
+        cm = confusion_matrix(predictions, test_classes)
+        prec = precision(predictions, test_classes)
+        rec = recall(predictions, test_classes)
+        f1_score = f1(predictions, test_classes)
+        
+        # Accumulate metrics across all folds
+        avg_cm += cm
+        avg_prec[partition_no] = prec
+        avg_rec[partition_no] = rec
+        avg_f1_score[partition_no] = f1_score
+
+    # perform statistical analyses on metrics
+    # Calculate average metrics across all folds
+    avg_cm /= k
+    avg_prec_mean = np.mean(avg_prec, axis=0)
+    avg_rec_mean = np.mean(avg_rec, axis=0)
+    avg_f1_score_mean = np.mean(avg_f1_score, axis=0)
+
+    # Calculate standard deviation of performance metrics
+    sigma_prec = np.std(avg_prec, axis=0)
+    sigma_rec = np.std(avg_rec, axis=0)
+    sigma_f1_score = np.std(avg_f1_score, axis=0)
+
+    avg_metrics = np.vstack((avg_prec_mean, avg_rec_mean, avg_f1_score_mean))
+    sigma_metrics = np.array([sigma_prec, sigma_rec, sigma_f1_score])
+
     return avg_metrics, sigma_metrics
 
 
