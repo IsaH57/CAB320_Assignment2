@@ -195,19 +195,19 @@ def confusion_matrix(predictions, ground_truth, plot=False, all_classes=None):
     Given a set of classifier predictions and the ground truth, calculate and
     return the confusion matrix of the classifier's performance.
 
-    Inputs:
-        - predictions: np.ndarray of length n where n is the number of data
+    Args:
+        predictions: np.ndarray of length n where n is the number of data
                        points in the dataset being classified and each value
                        is the class predicted by the classifier
-        - ground_truth: np.ndarray of length n where each value is the correct
+        ground_truth: np.ndarray of length n where each value is the correct
                         value of the class predicted by the classifier
-        - plot: boolean. If true, create a plot of the confusion matrix with
+        plot: boolean. If true, create a plot of the confusion matrix with
                 either matplotlib or with sklearn.
-        - classes: a set of all unique classes that are expected in the dataset.
+        classes: a set of all unique classes that are expected in the dataset.
                    If None is provided we assume all relevant classes are in 
                    the ground_truth instead.
-    Outputs:
-        - cm: type np.ndarray of shape (c,c) where c is the number of unique  
+    Returns:
+        cm: type np.ndarray of shape (c,c) where c is the number of unique
               classes in the ground_truth
               
               Each row corresponds to a unique class in the ground truth and
@@ -249,11 +249,21 @@ def confusion_matrix(predictions, ground_truth, plot=False, all_classes=None):
 
 def precision(predictions, ground_truth):
     '''
-    Similar to the confusion matrix, now calculate the classifier's precision
+    Calculates the classifier's precision
     
-    Inputs: see confusion_matrix above
-    Outputs:
-        - precision: type np.ndarray of length c,
+    Args:
+        predictions: np.ndarray of length n where n is the number of data
+                       points in the dataset being classified and each value
+                       is the class predicted by the classifier
+        ground_truth: np.ndarray of length n where each value is the correct
+                        value of the class predicted by the classifier
+        plot: boolean. If true, create a plot of the confusion matrix with
+                either matplotlib or with sklearn.
+        classes: a set of all unique classes that are expected in the dataset.
+                   If None is provided we assume all relevant classes are in
+                   the ground_truth instead.
+    Returns:
+        precision: type np.ndarray of length c,
                      values are the precision for each class
     '''
     num_classes = len(np.unique(ground_truth))
@@ -269,11 +279,16 @@ def precision(predictions, ground_truth):
 
 def recall(predictions, ground_truth):
     '''
-    Similar to the confusion matrix, now calculate the classifier's recall
+    Calculates the classifier's recall
     
-    Inputs: see confusion_matrix above
-    Outputs:
-        - recall: type np.ndarray of length c,
+    Args:
+        predictions: np.ndarray of length n where n is the number of data
+                       points in the dataset being classified and each value
+                       is the class predicted by the classifier
+        ground_truth: np.ndarray of length n where each value is the correct
+                        value of the class predicted by the classifier
+    Returns:
+        recall: type np.ndarray of length c,
                      values are the recall for each class
     '''
     num_classes = len(np.unique(ground_truth))
@@ -289,11 +304,15 @@ def recall(predictions, ground_truth):
 
 def f1(predictions, ground_truth):
     '''
-    Similar to the confusion matrix, now calculate the classifier's f1 score
-    Inputs:
-        - see confusion_matrix above for predictions, ground_truth
-    Outputs:
-        - f1: type nd.ndarry of length c where c is the number of classes
+    Calculates the classifier's f1 score
+    Args:
+        predictions: np.ndarray of length n where n is the number of data
+                       points in the dataset being classified and each value
+                       is the class predicted by the classifier
+        ground_truth: np.ndarray of length n where each value is the correct
+                        value of the class predicted by the classifier
+    Returns:
+        f1: type nd.ndarry of length c where c is the number of classes
     '''
 
     prec = precision(predictions, ground_truth)
@@ -305,22 +324,22 @@ def f1(predictions, ground_truth):
 
 def k_fold_validation(features, ground_truth, classifier, k=2):
     '''
-    Inputs:
-        - features: np.ndarray of features in the dataset
-        - ground_truth: np.ndarray of class values associated with the features
-        - fit_func: f
-        - classifier: class object with both fit() and predict() methods which
-        can be applied to subsets of the features and ground_truth inputs.
-        - predict_func: function, calling predict_func(features) should return
-        a numpy array of class predictions which can in turn be input to the 
-        functions in this script to calculate performance metrics.
-        - k: int, number of sub-sets to partition the data into. default is k=2
-    Outputs:
-        - avg_metrics: np.ndarray of shape (3, c) where c is the number of classes.
-        The first row is the average precision for each class over the k
-        validation steps. Second row is recall and third row is f1 score.
-        - sigma_metrics: np.ndarray, each value is the standard deviation of 
-        the performance metrics [precision, recall, f1_score]
+    Args:
+        features: np.ndarray of features in the dataset
+        ground_truth: np.ndarray of class values associated with the features
+        fit_func: f
+        classifier: class object with both fit() and predict() methods which
+                    can be applied to subsets of the features and ground_truth inputs.
+        predict_func: function, calling predict_func(features) should return
+                    a numpy array of class predictions which can in turn be input to the
+                    functions in this script to calculate performance metrics.
+        k: int, number of sub-sets to partition the data into. default is k=2
+    Returns:
+        avg_metrics: np.ndarray of shape (3, c) where c is the number of classes.
+                     The first row is the average precision for each class over the k
+                     validation steps. Second row is recall and third row is f1 score.
+        sigma_metrics: np.ndarray, each value is the standard deviation of
+                     the performance metrics [precision, recall, f1_score]
     '''
 
     # split data
@@ -361,23 +380,23 @@ def k_fold_validation(features, ground_truth, classifier, k=2):
         # determine test and train sets
         start = partition_no * fold_size
         end = (partition_no + 1) * fold_size if partition_no != k - 1 else num_samples
-        
+
         test_features = shuffled_features[start:end]
         test_classes = shuffled_ground_truth[start:end]
-        
+
         train_features = np.concatenate((shuffled_features[:start], shuffled_features[end:]), axis=0)
         train_classes = np.concatenate((shuffled_ground_truth[:start], shuffled_ground_truth[end:]), axis=0)
-        
+
         # fit model to training data & perform predictions on the test set
         classifier.fit(train_features, train_classes)
         predictions = classifier.predict(test_features)
-        
+
         # calculate performance metrics 
         cm = confusion_matrix(predictions, test_classes)
         prec = precision(predictions, test_classes)
         rec = recall(predictions, test_classes)
         f1_score = f1(predictions, test_classes)
-        
+
         # Accumulate metrics across all folds
         avg_cm += cm
         avg_prec[partition_no] = prec
@@ -409,19 +428,19 @@ def transfer_learning(train_set, eval_set, test_set, model, parameters):
     Implement and perform standard transfer learning here.
 
     Args:
-        - train_set: list or tuple of the training images and labels in the
+        train_set: list or tuple of the training images and labels in the
             form (images, labels) for training the classifier
-        - eval_set: list or tuple of the images and labels used in evaluating
+        eval_set: list or tuple of the images and labels used in evaluating
             the model during training, in the form (images, labels)
-        - test_set: list or tuple of the training images and labels in the
+        test_set: list or tuple of the training images and labels in the
             form (images, labels) for testing the classifier after training
-        - model: an instance of tf.keras.applications.MobileNetV2
-        - parameters: list or tuple of parameters to use during training:
+        model: an instance of tf.keras.applications.MobileNetV2
+        parameters: list or tuple of parameters to use during training:
             (learning_rate, momentum, nesterov)
 
     Returns:
-        - model : an instance of tf.keras.applications.MobileNetV2
-        - metrics : list of class-wise recall, precision, and f1 scores of the
+        model : an instance of tf.keras.applications.MobileNetV2
+        metrics : list of class-wise recall, precision, and f1 scores of the
             model on the test_set (list of np.ndarray)
 
     '''
@@ -460,19 +479,19 @@ def accelerated_learning(train_set, eval_set, test_set, model, parameters):
     Implement and perform accelerated transfer learning here.
 
     Args:
-        - train_set: list or tuple of the training images and labels in the
+        train_set: list or tuple of the training images and labels in the
             form (images, labels) for training the classifier
-        - eval_set: list or tuple of the images and labels used in evaluating
+        eval_set: list or tuple of the images and labels used in evaluating
             the model during training, in the form (images, labels)
-        - test_set: list or tuple of the training images and labels in the
+        test_set: list or tuple of the training images and labels in the
             form (images, labels) for testing the classifier after training
-        - model: an instance of tf.keras.applications.MobileNetV2
-        - parameters: list or tuple of parameters to use during training:
+        model: an instance of tf.keras.applications.MobileNetV2
+        parameters: list or tuple of parameters to use during training:
             (learning_rate, momentum, nesterov)
 
     Returns:
-        - model : an instance of tf.keras.applications.MobileNetV2
-        - metrics : list of classwise recall, precision, and f1 scores of the
+        model : an instance of tf.keras.applications.MobileNetV2
+        metrics : list of classwise recall, precision, and f1 scores of the
             model on the test_set (list of np.ndarray)
 
     '''
@@ -513,7 +532,7 @@ def plot_learning_curves(history, parameters):
     A function that plots the learning curves of a model based on the training history.
 
     Args:
-        - history: the training history of the model
+        history: the training history of the model
     """
     learning_rate, momentum, nesterov = parameters
 
@@ -551,14 +570,14 @@ if __name__ == "__main__":
 
     # Task 5: Compile and train model with SGD optimizer
     # model, metrics = transfer_learning(train, test, eval, model, (0.01, 0.0, False))
-    
+
     # Task 9
     test_predictions = model.predict(test[0])
     test_predictions_classes = np.argmax(test_predictions, axis=1)
     conf_matrix = confusion_matrix(test_predictions_classes, test[1], plot=True)
     print("Confusion Matrix:")
     print(conf_matrix)
-    
+
     # Task 10
     precision_scores = precision(test_predictions_classes, test[1])
     recall_scores = recall(test_predictions_classes, test[1])
@@ -570,7 +589,7 @@ if __name__ == "__main__":
     print(recall_scores)
     print("F1 Scores:")
     print(f1_scores)
-    
+
     # Task 11
     # k = 3
     # avg_metrics, sigma_metrics = k_fold_validation(data, labels, model, k)
@@ -578,7 +597,7 @@ if __name__ == "__main__":
     # print(avg_metrics)
     # print("Sigma Metrics (k=3):")
     # print(sigma_metrics)
-    
+
     # # Repeat for two different values of k
     # k_values = [5, 10]
     # for k in k_values:
