@@ -622,24 +622,7 @@ if __name__ == "__main__":
     task_10(test_predictions_classes, ground_truth)
     
     task_11()
-    
-    # Task 10
-    # precision_scores = precision(test_predictions_classes, test[1])
-    # recall_scores = recall(test_predictions_classes, test[1])
-    # f1_scores = f1(test_predictions_classes, test[1])
 
-    # print("Precision Scores:")
-    # print(precision_scores)
-    # print("Recall Scores:")
-    # print(recall_scores)
-    # print("F1 Scores:")
-    # print(f1_scores)
-    
-    task_11()
-
-
-    # Task 14:
-    # model, metrics = accelerated_learning(train, test, eval, model, (0.01, 0.0, False))
     # Task 14:
     # model, metrics = accelerated_learning(train, test, eval, model, (0.01, 0.0, False))
 #########################  CODE GRAVEYARD  #############################
