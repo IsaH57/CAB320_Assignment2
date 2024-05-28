@@ -556,6 +556,47 @@ def plot_learning_curves(history, parameters):
     plt.savefig('loss_lr' + str(learning_rate) + '_mo' + str(momentum) + '.png')
     plt.show()
 
+def task_9(model, test):
+    # Assuming you have trained your classifier and obtained predictions
+    test_predictions = model.predict(test[0])
+    test_predictions_classes = np.argmax(test_predictions, axis=1)
+    
+    # Compute confusion matrix
+    conf_matrix = confusion_matrix(test_predictions_classes, test[1], plot=True)
+    print("Confusion Matrix:")
+    print(conf_matrix)
+    
+    return test_predictions_classes, test[1]
+    
+def task_10(test_predictions_classes, ground_truth):
+    precision_scores = precision(test_predictions_classes, test[1])
+    recall_scores = recall(test_predictions_classes, test[1])
+    f1_scores = f1(test_predictions_classes, test[1])
+
+    print("Precision Scores:")
+    print(precision_scores)
+    print("Recall Scores:")
+    print(recall_scores)
+    print("F1 Scores:")
+    print(f1_scores)
+    
+def task_11():
+    k = 3
+    avg_metrics, sigma_metrics = k_fold_validation(data, labels, model, k)
+    print("Average Metrics (k=3):")
+    print(avg_metrics)
+    print("Sigma Metrics (k=3):")
+    print(sigma_metrics)
+    
+    # Repeat for two different values of k
+    k_values = [5, 10]
+    for k in k_values:
+        avg_metrics, sigma_metrics = k_fold_validation(data, labels, model, k)
+        print(f"Average Metrics (k={k}):")
+        print(avg_metrics)
+        print(f"Sigma Metrics (k={k}):")
+        print(sigma_metrics)
+    
 
 if __name__ == "__main__":
     # Task 1: Use the small_flower_datatset
@@ -570,48 +611,35 @@ if __name__ == "__main__":
 
     # Task 5: Compile and train model with SGD optimizer
     # model, metrics = transfer_learning(train, test, eval, model, (0.01, 0.0, False))
-
-    # Task 9
-    test_predictions = model.predict(test[0])
-    test_predictions_classes = np.argmax(test_predictions, axis=1)
-    conf_matrix = confusion_matrix(test_predictions_classes, test[1], plot=True)
-    print("Confusion Matrix:")
-    print(conf_matrix)
-
-    # Task 10
-    precision_scores = precision(test_predictions_classes, test[1])
-    recall_scores = recall(test_predictions_classes, test[1])
-    f1_scores = f1(test_predictions_classes, test[1])
-
-    print("Precision Scores:")
-    print(precision_scores)
-    print("Recall Scores:")
-    print(recall_scores)
-    print("F1 Scores:")
-    print(f1_scores)
-
-    # Task 11
-    # k = 3
-    # avg_metrics, sigma_metrics = k_fold_validation(data, labels, model, k)
-    # print("Average Metrics (k=3):")
-    # print(avg_metrics)
-    # print("Sigma Metrics (k=3):")
-    # print(sigma_metrics)
-
-    # # Repeat for two different values of k
-    # k_values = [5, 10]
-    # for k in k_values:
-    #     avg_metrics, sigma_metrics = k_fold_validation(data, labels, model, k)
-    #     print(f"Average Metrics (k={k}):")
-    #     print(avg_metrics)
-    #     print(f"Sigma Metrics (k={k}):")
-    #     print(sigma_metrics)
-
+    
     # Task 8: Experiment with 3 different orders of magnitude for the learning rate.
-    # model_small_lr, metrics_small_lr = transfer_learning(train, test, eval, model, (0.001, 0.0, False))
+    model_small_lr, metrics_small_lr = transfer_learning(train, test, eval, model, (0.001, 0.0, False))  # Deemed best learning rate
     # model_medium_lr, metrics_medium_lr = transfer_learning(train, test, eval, model, (0.1, 0.0, False))
     # model_large_lr, metrics_large_lr = transfer_learning(train, test, eval, model, (1, 0.0, False))
+    
+    test_predictions_classes, ground_truth = task_9(model, test)
+    
+    task_10(test_predictions_classes, ground_truth)
+    
+    task_11()
+    
+    # Task 10
+    # precision_scores = precision(test_predictions_classes, test[1])
+    # recall_scores = recall(test_predictions_classes, test[1])
+    # f1_scores = f1(test_predictions_classes, test[1])
 
+    # print("Precision Scores:")
+    # print(precision_scores)
+    # print("Recall Scores:")
+    # print(recall_scores)
+    # print("F1 Scores:")
+    # print(f1_scores)
+    
+    task_11()
+
+
+    # Task 14:
+    # model, metrics = accelerated_learning(train, test, eval, model, (0.01, 0.0, False))
     # Task 14:
     # model, metrics = accelerated_learning(train, test, eval, model, (0.01, 0.0, False))
 #########################  CODE GRAVEYARD  #############################
