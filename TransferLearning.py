@@ -31,6 +31,7 @@ def my_team():
     of triplet of the form (student_number, first_name, last_name)
     
     '''
+
     return [(11921048, 'Isabell Sophie', 'Hans'), (11220902, 'Kayathri', 'Arumugam'),
             (11477296, 'Nasya Sze Yuen', 'Liew')]
 
@@ -42,7 +43,10 @@ def load_model():
     Returns:
         tf.keras.Model: A TensorFlow Keras Model with the loaded MobileNetV2 base model and a new output layer.
     """
+
     num_classes = 5
+
+    # Task 2: Download a pre-trained MobileNetV2 model
     base_model = tf.keras.applications.MobileNetV2(include_top=False, input_shape=(224, 224, 3))
 
     # Task 3: Replace output layer to match number of classes
@@ -51,6 +55,7 @@ def load_model():
     output = tf.keras.layers.Dense(num_classes, activation='softmax')(x)
 
     model = tf.keras.Model(inputs=base_model.input, outputs=output)
+
     return model
 
 
@@ -65,8 +70,6 @@ def freeze_layers(model):
         tf.keras.Model: A TensorFlow Keras Model with the base model freezed
 
     """
-    # Get the total number of layers in the model
-    num_layers = len(model.layers)
 
     # Freeze all layers except the last one
     for layer in model.layers[:-1]:
@@ -85,6 +88,7 @@ def load_data(path):
     Returns:
         tuple: A numpy array containing the data and the labels.
     """
+
     imagePaths = sorted(list(paths.list_images(path)))
     class_to_int = map_classes_to_int(path)
     random.seed(42)
@@ -114,13 +118,13 @@ def split_combined_numpy(combined):
     Returns:
         tuple: A tuple containing features (data) and labels as separate numpy arrays.
     """
+
     data = []
     labels = []
-    image_dims = (224, 224, 3)
 
     for row in combined:
         image = row[:-1].reshape(image_dims)  # Reshape image data to original shape
-        int_label = int(row[-1])
+        int_label = int(row[-1])  # Convert label to integer
         labels.append(int_label)
         data.append(image)
 
@@ -140,6 +144,7 @@ def map_classes_to_int(path):
     Returns:
         dict: A dictionary mapping class names to numbers.
     """
+
     class_to_int = {}
     classes = sorted(os.listdir(path))
     for i, class_name in enumerate(classes):
@@ -161,9 +166,10 @@ def split_data(X, Y, train_fraction, randomize=False, eval_set=True):
         eval_set (bool, optional): Whether to create an evaluation dataset. Defaults to True.
 
     Returns:
-        tuple: If eval_set is True, returns (train_X, train_Y, test_X, test_Y, eval_X, eval_Y).
-               If eval_set is False, returns (train_X, train_Y, test_X, test_Y).
+        tuple: If eval_set is True, returns train, test, eval
+               If eval_set is False, returns train, test.
     """
+
     num_samples = len(X)
     train_samples = int(num_samples * train_fraction)
     test_samples = int(num_samples * ((1 - train_fraction) / 2))
@@ -257,15 +263,11 @@ def precision(predictions, ground_truth):
                        is the class predicted by the classifier
         ground_truth: np.ndarray of length n where each value is the correct
                         value of the class predicted by the classifier
-        plot: boolean. If true, create a plot of the confusion matrix with
-                either matplotlib or with sklearn.
-        classes: a set of all unique classes that are expected in the dataset.
-                   If None is provided we assume all relevant classes are in
-                   the ground_truth instead.
     Returns:
         precision: type np.ndarray of length c,
                      values are the precision for each class
     '''
+
     num_classes = len(np.unique(ground_truth))
     precision = np.zeros(num_classes)
 
@@ -291,6 +293,7 @@ def recall(predictions, ground_truth):
         recall: type np.ndarray of length c,
                      values are the recall for each class
     '''
+
     num_classes = len(np.unique(ground_truth))
     recall = np.zeros(num_classes)
 
@@ -324,6 +327,7 @@ def f1(predictions, ground_truth):
 
 def k_fold_validation(features, ground_truth, classifier, k=2):
     '''
+    Perform k-fold cross validation on the given classifier.
     Args:
         features: np.ndarray of features in the dataset
         ground_truth: np.ndarray of class values associated with the features
@@ -425,7 +429,7 @@ def k_fold_validation(features, ground_truth, classifier, k=2):
 
 def transfer_learning(train_set, eval_set, test_set, model, parameters):
     '''
-    Implement and perform standard transfer learning here.
+    Performs standard transfer learning.
 
     Args:
         train_set: list or tuple of the training images and labels in the
@@ -444,6 +448,7 @@ def transfer_learning(train_set, eval_set, test_set, model, parameters):
             model on the test_set (list of np.ndarray)
 
     '''
+
     learning_rate, momentum, nesterov = parameters
     metrics = ['accuracy']
 
@@ -465,7 +470,7 @@ def transfer_learning(train_set, eval_set, test_set, model, parameters):
         x=train_set[0],
         y=train_set[1],
         validation_data=eval_set,
-        epochs=15
+        epochs=30
     )
 
     # Task 7: Plot the training and validation errors and accuracies of standard transfer learning
@@ -476,7 +481,7 @@ def transfer_learning(train_set, eval_set, test_set, model, parameters):
 
 def accelerated_learning(train_set, eval_set, test_set, model, parameters):
     '''
-    Implement and perform accelerated transfer learning here.
+    Performs accelerated transfer learning.
 
     Args:
         train_set: list or tuple of the training images and labels in the
@@ -495,7 +500,8 @@ def accelerated_learning(train_set, eval_set, test_set, model, parameters):
             model on the test_set (list of np.ndarray)
 
     '''
-    # freeze the model base layers
+
+    # freeze the models base layers
     model = freeze_layers(model)
 
     learning_rate, momentum, nesterov = parameters
@@ -533,7 +539,9 @@ def plot_learning_curves(history, parameters):
 
     Args:
         history: the training history of the model
+        parameters: the parameters used during training
     """
+
     learning_rate, momentum, nesterov = parameters
 
     # summarize history for accuracy
@@ -556,19 +564,137 @@ def plot_learning_curves(history, parameters):
     plt.savefig('loss_lr' + str(learning_rate) + '_mo' + str(momentum) + '.png')
     plt.show()
 
+
+def task_1():
+    """
+    Task 1:
+    This function returns the path to the small_flower_dataset.
+
+    Returns:
+        str: The path to the small_flower_dataset.
+    """
+
+    path = 'small_flower_dataset'
+    return path
+
+
+def task_2_3():
+    """
+    Task 2:
+    Download a pre-trained MobileNetV2 model and
+    Task 3:
+    Replace the last layer of the model
+
+    Returns:
+        tf.keras.Model: A TensorFlow Keras Model with the loaded MobileNetV2 base model and a new output layer.
+    """
+
+    model = load_model()
+
+    return model
+
+
+def task_4(path):
+    """
+    Task 4:
+    Prepare the data for standard transfer learning.
+
+    Args:
+        path (str): The path to the dataset.
+
+    Returns:
+        tuple: A tuple containing the train, test, and evaluation data and labels.
+            - train (np.ndarray): The training data.
+            - test (np.ndarray): The test data.
+            - eval (np.ndarray): The evaluation data.
+    """
+
+    data, labels = split_combined_numpy(load_data(path))
+    train, test, eval = split_data(data, labels, 0.8, True, True)
+    return train, test, eval
+
+
+def task_5_7(train, test, eval, model):
+    """
+    Task 5: Compile and train model with SGD optimizer and
+    Task 7: Plot the curves.
+
+    Args:
+        train (tuple): A tuple containing the training images and labels in the form (images, labels).
+        test (tuple): A tuple containing the test images and labels in the form (images, labels).
+        eval (tuple): A tuple containing the evaluation images and labels in the form (images, labels).
+        model (tf.keras.Model): An instance of tf.keras.applications.MobileNetV2.
+
+    Returns:
+        tuple: A tuple containing the trained model and the metrics of the model on the test set.
+            - model (tf.keras.Model): The trained model.
+            - metrics (list): A list of class-wise recall, precision, and f1 scores of the model on the test set.
+    """
+
+    model, metrics = transfer_learning(train, test, eval, model, (0.01, 0.0, False))
+    return model, metrics
+
+
+def task_8(train, test, eval):
+    """
+    Task 8: Experiment with 3 different orders of magnitude for the learning rate.
+
+    This function performs transfer learning with three different learning rates: 0.001, 0.1, and 1. It uses the
+    `transfer_learning` function to train the model with each learning rate.
+    It returns the model with the best results. The discussion on the best results can be found in the report.
+
+    Args:
+        train (tuple): A tuple containing the training images and labels in the form (images, labels).
+        test (tuple): A tuple containing the test images and labels in the form (images, labels).
+        eval (tuple): A tuple containing the evaluation images and labels in the form (images, labels).
+
+    Returns:
+        model_small_lr (tf.keras.Model): The model trained with the smallest learning rate which turned out to be the best.
+    """
+    model = load_model()
+    model_small_lr, metrics_small_lr = transfer_learning(train, test, eval, model,
+                                                         (0.001, 0.0, False))  # Deemed best learning rate
+    model = load_model()
+    model_medium_lr, metrics_medium_lr = transfer_learning(train, test, eval, model, (0.1, 0.0, False))
+    model = load_model()
+    model_large_lr, metrics_large_lr = transfer_learning(train, test, eval, model, (1, 0.0, False))
+
+    return model_small_lr
+
+
 def task_9(model, test):
+    """
+    Task 9:
+    Calculate the confusion matrix for a trained classifier and print it.
+
+    Args:
+        model (tf.keras.Model): The trained classifier model.
+        test (tuple): A tuple containing the test images and labels.
+
+    Returns:
+        tuple: A tuple containing the predicted classes and the true labels.
+    """
     # Assuming you have trained your classifier and obtained predictions
     test_predictions = model.predict(test[0])
     test_predictions_classes = np.argmax(test_predictions, axis=1)
-    
+
     # Compute confusion matrix
     conf_matrix = confusion_matrix(test_predictions_classes, test[1], plot=True)
     print("Confusion Matrix:")
     print(conf_matrix)
-    
+
     return test_predictions_classes, test[1]
-    
+
+
 def task_10(test_predictions_classes, ground_truth):
+    """
+    Task 10:
+    Calculate and print the precision, recall, and F1 scores for a classifier's performance on a test set.
+
+    Args:
+        test_predictions_classes (np.ndarray): An array of predicted classes for the test set.
+        ground_truth (np.ndarray): An array of the correct classes for the test set.
+    """
     precision_scores = precision(test_predictions_classes, test[1])
     recall_scores = recall(test_predictions_classes, test[1])
     f1_scores = f1(test_predictions_classes, test[1])
@@ -579,15 +705,22 @@ def task_10(test_predictions_classes, ground_truth):
     print(recall_scores)
     print("F1 Scores:")
     print(f1_scores)
-    
-def task_11():
+
+
+def task_11(path, model):
+    """
+    Task 11:
+    Perform k-fold validation for different values of k and print the average metrics and sigma metrics.
+    """
+
+    data, labels = split_combined_numpy(load_data(path))
     k = 3
     avg_metrics, sigma_metrics = k_fold_validation(data, labels, model, k)
     print("Average Metrics (k=3):")
     print(avg_metrics)
     print("Sigma Metrics (k=3):")
     print(sigma_metrics)
-    
+
     # Repeat for two different values of k
     k_values = [5, 10]
     for k in k_values:
@@ -596,33 +729,78 @@ def task_11():
         print(avg_metrics)
         print(f"Sigma Metrics (k={k}):")
         print(sigma_metrics)
-    
+
+
+def task_12(train, test, eval):
+    """
+    Perform transfer learning with different momentum values for the given training, test, and evaluation data using the provided model and the best learning rate.
+
+    Args:
+        train (tuple): A tuple containing the training images and labels in the form (images, labels).
+        test (tuple): A tuple containing the test images and labels in the form (images, labels).
+        eval (tuple): A tuple containing the evaluation images and labels in the form (images, labels).
+        model (tf.keras.Model): An instance of tf.keras.applications.MobileNetV2.
+
+    """
+    model = load_model()
+    model_small_mo, metrics_small_mo = transfer_learning(train, test, eval, model, (0.001, 0.1, False))
+    model = load_model()
+    model_medium_mo, metrics_medium_mo = transfer_learning(train, test, eval, model, (0.001, 0.5, False))
+    model = load_model()
+    model_large_mo, metrics_large_mo = transfer_learning(train, test, eval, model, (0.001, 0.9, False))
+
+
+def task_14(train, test, eval):
+    """
+    Task 14:
+    Perform accelerated learning on the given training, test, and evaluation data using the provided model.
+
+    Args:
+        train (tuple): A tuple containing the training images and labels in the form (images, labels).
+        test (tuple): A tuple containing the test images and labels in the form (images, labels).
+        eval (tuple): A tuple containing the evaluation images and labels in the form (images, labels).
+        model (tf.keras.Model): An instance of tf.keras.applications.MobileNetV2.
+
+    Returns:
+        tuple: A tuple containing the trained model and the metrics of the model on the test set.
+            - model (tf.keras.Model): The trained model.
+            - metrics (list): A list of class-wise recall, precision, and f1 scores of the model on the test set.
+    """
+    model = load_model()
+    model, metrics = accelerated_learning(train, test, eval, model, (0.01, 0.0, False))
+
+    return model, metrics
+
 
 if __name__ == "__main__":
     # Task 1: Use the small_flower_datatset
-    path = 'small_flower_dataset'
+    path = task_1()
 
-    # Task 2: Download a pre-trained MobileNetV2 model
-    model = load_model()
+    # Task 2 and 3: Download a pre-trained MobileNetV2 model and replace last layer
+    model = task_2_3()
 
     # Task 4: Prepare the data for standard transfer learning
-    data, labels = split_combined_numpy(load_data(path))
-    train, test, eval = split_data(data, labels, 0.8, True, True)
+    train, test, eval = task_4(path)
 
-    # Task 5: Compile and train model with SGD optimizer
-    # model, metrics = transfer_learning(train, test, eval, model, (0.01, 0.0, False))
-    
+    # Task 5 and 7: Compile and train model with SGD optimizer and plot the curves
+    std_model, std_metrics = task_5_7(train, test, eval, model)
+
     # Task 8: Experiment with 3 different orders of magnitude for the learning rate.
-    model_small_lr, metrics_small_lr = transfer_learning(train, test, eval, model, (0.001, 0.0, False))  # Deemed best learning rate
-    # model_medium_lr, metrics_medium_lr = transfer_learning(train, test, eval, model, (0.1, 0.0, False))
-    # model_large_lr, metrics_large_lr = transfer_learning(train, test, eval, model, (1, 0.0, False))
-    
-    test_predictions_classes, ground_truth = task_9(model, test)
-    
-    task_10(test_predictions_classes, ground_truth)
-    
-    task_11()
+    best_model = task_8(train, test, eval)
 
-    # Task 14:
-    # model, metrics = accelerated_learning(train, test, eval, model, (0.01, 0.0, False))
+    # Task 9: Run the classifier and plot the confusion matrix
+    test_predictions_classes, ground_truth = task_9(best_model, test)
+
+    # Task 10: Calculate and print the precision, recall, and F1 scores
+    task_10(test_predictions_classes, ground_truth)
+
+    # Task 11: Perform k-fold validation
+    task_11(path, model)
+
+    # Task 12: Add non-zero momentum
+    task_12(train, test, eval)
+
+    # Task 14: Perform accelerated learning
+    acc_model, acc_metrics = task_14(train, test, eval)
+
 #########################  CODE GRAVEYARD  #############################
