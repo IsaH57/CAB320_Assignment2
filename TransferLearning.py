@@ -224,19 +224,20 @@ def confusion_matrix(predictions, ground_truth, plot=False, all_classes=None):
     predictions = np.array(predictions)
     ground_truth = np.array(ground_truth)
 
+    # Convert predictions to class labels if they are probabilities
+    if predictions.ndim > 1:
+        predictions = np.argmax(predictions, axis=1)
+
     # Get unique classes from ground_truth if not provided
     if all_classes is None:
         all_classes = np.unique(ground_truth)
-
+    
     # Initialize confusion matrix
-    cm = np.zeros((len(all_classes), len(all_classes)))
+    cm = np.zeros((len(all_classes), len(all_classes)), dtype=int)
 
     # Populate confusion matrix
     for pred, true in zip(predictions, ground_truth):
-        if np.isscalar(pred):
-            cm[true, pred] += 1
-        else:
-            cm[true, pred[0]] += 1  # Use the first element of pred if it's a list or array
+        cm[true, pred] += 1
 
     if plot:
         plt.figure(figsize=(10, 8))
@@ -268,6 +269,12 @@ def precision(predictions, ground_truth):
                      values are the precision for each class
     '''
 
+    predictions = np.array(predictions)
+    ground_truth = np.array(ground_truth)
+    
+    if predictions.ndim > 1:
+        predictions = np.argmax(predictions, axis=1)
+    
     num_classes = len(np.unique(ground_truth))
     precision = np.zeros(num_classes)
 
@@ -294,6 +301,12 @@ def recall(predictions, ground_truth):
                      values are the recall for each class
     '''
 
+    predictions = np.array(predictions)
+    ground_truth = np.array(ground_truth)
+    
+    if predictions.ndim > 1:
+        predictions = np.argmax(predictions, axis=1)
+    
     num_classes = len(np.unique(ground_truth))
     recall = np.zeros(num_classes)
 
@@ -346,31 +359,11 @@ def k_fold_validation(features, ground_truth, classifier, k=2):
                      the performance metrics [precision, recall, f1_score]
     '''
 
-    # split data
-    ### YOUR CODE HERE ###
+    num_classes = len(np.unique(ground_truth))
+    avg_prec = np.zeros((k, num_classes))
+    avg_rec = np.zeros((k, num_classes))
+    avg_f1_score = np.zeros((k, num_classes))
 
-    # go through each partition and use it as a test set.
-    # for partition_no in range(k):
-    # determine test and train sets
-    ### YOUR CODE HERE###
-
-    # fit model to training data and perform predictions on the test set
-    # classifier.fit(train_features, train_classes)
-    # predictions = classifier.predict(test_features)
-
-    # calculate performance metrics
-    ### YOUR CODE HERE###
-
-    # perform statistical analyses on metrics
-    ### YOUR CODE HERE###
-
-    # Initialize arrays to accumulate metrics across all folds
-    avg_cm = np.zeros((3, len(np.unique(ground_truth))))
-    avg_prec = np.zeros((k, len(np.unique(ground_truth))))
-    avg_rec = np.zeros((k, len(np.unique(ground_truth))))
-    avg_f1_score = np.zeros((k, len(np.unique(ground_truth))))
-
-    # split data
     # Calculate fold size and shuffle the data
     num_samples = len(features)
     fold_size = num_samples // k
@@ -379,9 +372,8 @@ def k_fold_validation(features, ground_truth, classifier, k=2):
     shuffled_features = features[indices]
     shuffled_ground_truth = ground_truth[indices]
 
-    # go through each partition and use it as a test set
+    # Perform k-fold cross validation
     for partition_no in range(k):
-        # determine test and train sets
         start = partition_no * fold_size
         end = (partition_no + 1) * fold_size if partition_no != k - 1 else num_samples
 
@@ -391,25 +383,21 @@ def k_fold_validation(features, ground_truth, classifier, k=2):
         train_features = np.concatenate((shuffled_features[:start], shuffled_features[end:]), axis=0)
         train_classes = np.concatenate((shuffled_ground_truth[:start], shuffled_ground_truth[end:]), axis=0)
 
-        # fit model to training data & perform predictions on the test set
+        # Fit model to training data & perform predictions on the test set
         classifier.fit(train_features, train_classes)
         predictions = classifier.predict(test_features)
 
-        # calculate performance metrics 
-        cm = confusion_matrix(predictions, test_classes)
+        # Calculate performance metrics
         prec = precision(predictions, test_classes)
         rec = recall(predictions, test_classes)
         f1_score = f1(predictions, test_classes)
 
         # Accumulate metrics across all folds
-        avg_cm += cm
         avg_prec[partition_no] = prec
         avg_rec[partition_no] = rec
         avg_f1_score[partition_no] = f1_score
 
-    # perform statistical analyses on metrics
     # Calculate average metrics across all folds
-    avg_cm /= k
     avg_prec_mean = np.mean(avg_prec, axis=0)
     avg_rec_mean = np.mean(avg_rec, axis=0)
     avg_f1_score_mean = np.mean(avg_f1_score, axis=0)
@@ -654,10 +642,10 @@ def task_8(train, test, eval):
     model = load_model()
     model_small_lr, metrics_small_lr = transfer_learning(train, test, eval, model,
                                                          (0.001, 0.0, False))  # Deemed best learning rate
-    model = load_model()
-    model_medium_lr, metrics_medium_lr = transfer_learning(train, test, eval, model, (0.1, 0.0, False))
-    model = load_model()
-    model_large_lr, metrics_large_lr = transfer_learning(train, test, eval, model, (1, 0.0, False))
+    #model = load_model()
+    #model_medium_lr, metrics_medium_lr = transfer_learning(train, test, eval, model, (0.1, 0.0, False))
+    #model = load_model()
+    #model_large_lr, metrics_large_lr = transfer_learning(train, test, eval, model, (1.0, 0.0, False))
 
     return model_small_lr
 
@@ -726,7 +714,7 @@ def task_11(path, model):
     print(sigma_metrics)
 
     # Repeat for two different values of k
-    k_values = [5, 10]
+    k_values = [2, 5]
     for k in k_values:
         avg_metrics, sigma_metrics = k_fold_validation(data, labels, model, k)
         print(f"Average Metrics (k={k}):")
