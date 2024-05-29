@@ -711,6 +711,10 @@ def task_11(path, model):
     """
     Task 11:
     Perform k-fold validation for different values of k and print the average metrics and sigma metrics.
+
+    Args:
+        path (str): The path to the dataset.
+        model (tf.keras.Model): The model to be trained.
     """
 
     data, labels = split_combined_numpy(load_data(path))
@@ -739,7 +743,6 @@ def task_12(train, test, eval):
         train (tuple): A tuple containing the training images and labels in the form (images, labels).
         test (tuple): A tuple containing the test images and labels in the form (images, labels).
         eval (tuple): A tuple containing the evaluation images and labels in the form (images, labels).
-        model (tf.keras.Model): An instance of tf.keras.applications.MobileNetV2.
 
     """
     model = load_model()
@@ -759,7 +762,6 @@ def task_14(train, test, eval):
         train (tuple): A tuple containing the training images and labels in the form (images, labels).
         test (tuple): A tuple containing the test images and labels in the form (images, labels).
         eval (tuple): A tuple containing the evaluation images and labels in the form (images, labels).
-        model (tf.keras.Model): An instance of tf.keras.applications.MobileNetV2.
 
     Returns:
         tuple: A tuple containing the trained model and the metrics of the model on the test set.
