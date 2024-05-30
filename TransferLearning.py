@@ -231,7 +231,7 @@ def confusion_matrix(predictions, ground_truth, plot=False, all_classes=None):
     # Get unique classes from ground_truth if not provided
     if all_classes is None:
         all_classes = np.unique(ground_truth)
-    
+
     # Initialize confusion matrix
     cm = np.zeros((len(all_classes), len(all_classes)), dtype=int)
 
@@ -249,6 +249,7 @@ def confusion_matrix(predictions, ground_truth, plot=False, all_classes=None):
         tick_marks = np.arange(len(all_classes))
         plt.xticks(tick_marks, all_classes)
         plt.yticks(tick_marks, all_classes)
+        plt.savefig('confusion_matrix.png')
         plt.show()
 
     return cm
@@ -271,10 +272,10 @@ def precision(predictions, ground_truth):
 
     predictions = np.array(predictions)
     ground_truth = np.array(ground_truth)
-    
+
     if predictions.ndim > 1:
         predictions = np.argmax(predictions, axis=1)
-    
+
     num_classes = len(np.unique(ground_truth))
     precision = np.zeros(num_classes)
 
@@ -303,10 +304,10 @@ def recall(predictions, ground_truth):
 
     predictions = np.array(predictions)
     ground_truth = np.array(ground_truth)
-    
+
     if predictions.ndim > 1:
         predictions = np.argmax(predictions, axis=1)
-    
+
     num_classes = len(np.unique(ground_truth))
     recall = np.zeros(num_classes)
 
@@ -639,6 +640,7 @@ def task_8(train, test, eval):
     Returns:
         model_small_lr (tf.keras.Model): The model trained with the smallest learning rate which turned out to be the best.
     """
+
     model = load_model()
     model_small_lr, metrics_small_lr = transfer_learning(train, test, eval, model,
                                                          (0.001, 0.0, False))  # Deemed best learning rate
@@ -662,14 +664,13 @@ def task_9(model, test):
     Returns:
         tuple: A tuple containing the predicted classes and the true labels.
     """
+
     # Assuming you have trained your classifier and obtained predictions
     test_predictions = model.predict(test[0])
     test_predictions_classes = np.argmax(test_predictions, axis=1)
 
     # Compute confusion matrix
     conf_matrix = confusion_matrix(test_predictions_classes, test[1], plot=True)
-    print("Confusion Matrix:")
-    print(conf_matrix)
 
     return test_predictions_classes, test[1]
 
@@ -683,16 +684,14 @@ def task_10(test_predictions_classes, ground_truth):
         test_predictions_classes (np.ndarray): An array of predicted classes for the test set.
         ground_truth (np.ndarray): An array of the correct classes for the test set.
     """
+
     precision_scores = precision(test_predictions_classes, test[1])
     recall_scores = recall(test_predictions_classes, test[1])
     f1_scores = f1(test_predictions_classes, test[1])
 
-    print("Precision Scores:")
-    print(precision_scores)
-    print("Recall Scores:")
-    print(recall_scores)
-    print("F1 Scores:")
-    print(f1_scores)
+    print("Precision Scores: \n" + str(precision_scores))
+    print("Recall Scores: \n" + str(recall_scores))
+    print("F1 Scores: \n" + str(f1_scores))
 
 
 def task_11(path, model):
@@ -708,19 +707,15 @@ def task_11(path, model):
     data, labels = split_combined_numpy(load_data(path))
     k = 3
     avg_metrics, sigma_metrics = k_fold_validation(data, labels, model, k)
-    print("Average Metrics (k=3):")
-    print(avg_metrics)
-    print("Sigma Metrics (k=3):")
-    print(sigma_metrics)
+    print("Average Metrics (k=3): \n" + str(avg_metrics))
+    print("Sigma Metrics (k=3): \n" + str(sigma_metrics))
 
     # Repeat for two different values of k
-    k_values = [2, 5]
+    k_values = [5, 10]
     for k in k_values:
         avg_metrics, sigma_metrics = k_fold_validation(data, labels, model, k)
-        print(f"Average Metrics (k={k}):")
-        print(avg_metrics)
-        print(f"Sigma Metrics (k={k}):")
-        print(sigma_metrics)
+        print(f"Average Metrics (k={k}): \n" + str(avg_metrics))
+        print(f"Sigma Metrics (k={k}): \n" + str(sigma_metrics))
 
 
 def task_12(train, test, eval):
@@ -731,8 +726,8 @@ def task_12(train, test, eval):
         train (tuple): A tuple containing the training images and labels in the form (images, labels).
         test (tuple): A tuple containing the test images and labels in the form (images, labels).
         eval (tuple): A tuple containing the evaluation images and labels in the form (images, labels).
-
     """
+
     model = load_model()
     model_small_mo, metrics_small_mo = transfer_learning(train, test, eval, model, (0.001, 0.1, False))
     model = load_model()
@@ -756,6 +751,7 @@ def task_14(train, test, eval):
             - model (tf.keras.Model): The trained model.
             - metrics (list): A list of class-wise recall, precision, and f1 scores of the model on the test set.
     """
+
     model = load_model()
     model, metrics = accelerated_learning(train, test, eval, model, (0.01, 0.0, False))
 
@@ -781,7 +777,7 @@ if __name__ == "__main__":
     # Task 9: Run the classifier and plot the confusion matrix
     test_predictions_classes, ground_truth = task_9(best_model, test)
 
-    # Task 10: Calculate and print the precision, recall, and F1 scores
+    # Task 10: Calculate and print the precision, recall, and f1 scores
     task_10(test_predictions_classes, ground_truth)
 
     # Task 11: Perform k-fold validation
