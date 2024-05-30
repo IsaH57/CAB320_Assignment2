@@ -56,6 +56,8 @@ def load_model():
 
     model = tf.keras.Model(inputs=base_model.input, outputs=output)
 
+    base_model.trainable = False 
+
     return model
 
 
@@ -644,10 +646,10 @@ def task_8(train, test, eval):
     model = load_model()
     model_small_lr, metrics_small_lr = transfer_learning(train, test, eval, model,
                                                          (0.001, 0.0, False))  # Deemed best learning rate
-    #model = load_model()
-    #model_medium_lr, metrics_medium_lr = transfer_learning(train, test, eval, model, (0.1, 0.0, False))
-    #model = load_model()
-    #model_large_lr, metrics_large_lr = transfer_learning(train, test, eval, model, (1.0, 0.0, False))
+    model = load_model()
+    model_medium_lr, metrics_medium_lr = transfer_learning(train, test, eval, model, (0.1, 0.0, False))
+    model = load_model()
+    model_large_lr, metrics_large_lr = transfer_learning(train, test, eval, model, (1.0, 0.0, False))
 
     return model_small_lr
 
