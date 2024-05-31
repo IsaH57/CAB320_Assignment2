@@ -744,20 +744,17 @@ def task_14(train, test, eval):
     Perform accelerated learning on the given training, test, and evaluation data using the provided model.
 
     Args:
-        train (tuple): A tuple containing the training images and labels in the form (images, labels).
-        test (tuple): A tuple containing the test images and labels in the form (images, labels).
-        eval (tuple): A tuple containing the evaluation images and labels in the form (images, labels).
-
-    Returns:
-        tuple: A tuple containing the trained model and the metrics of the model on the test set.
-            - model (tf.keras.Model): The trained model.
-            - metrics (list): A list of class-wise recall, precision, and f1 scores of the model on the test set.
+        path (str): The file path to the combined dataset.
     """
-
-    model = load_model()
-    model, metrics = accelerated_learning(train, test, eval, model, (0.01, 0.0, False))
-
-    return model, metrics
+    data, labels = split_combined_numpy(load_data(path))
+        
+    # Split the data
+    train, test, eval = split_data(data, labels, 0.8, True, True)
+    
+    # Load model
+    model = accelerated_learning_model()
+    
+    accelerated_learning(train, test, eval, model, (0.004, 0.0, False))
 
 
 if __name__ == "__main__":
