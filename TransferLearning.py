@@ -756,7 +756,7 @@ def task_12(train, test, eval):
     model_large_mo, metrics_large_mo = transfer_learning(train, test, eval, model, (0.001, 0.9, False))
 
 
-def task_14(train, test, eval):
+def task_14(path):
     """
     Task 14:
     Perform accelerated learning on the given training, test, and evaluation data using the provided model.
@@ -772,7 +772,17 @@ def task_14(train, test, eval):
     # Load model
     model = accelerated_learning_model()
     
-    accelerated_learning(train, test, eval, model, (0.004, 0.0, False))
+    # Accelerated learning model without momentum
+    accelerated_learning(train, test, eval, model, (0.005, 0.0, False))
+    
+    # Accelerated learning model with non-zero momentum of 0.1
+    accelerated_learning(train, test, eval, model, (0.005, 0.1, False))
+    
+    # Accelerated learning model with non-zero momentum of 0.5
+    accelerated_learning(train, test, eval, model, (0.005, 0.5, False))
+    
+    # Accelerated learning model with non-zero momentum of 0.9
+    accelerated_learning(train, test, eval, model, (0.005, 0.9, False))
 
 
 if __name__ == "__main__":
