@@ -484,19 +484,21 @@ def accelerated_learning(train_set, eval_set, test_set, model, parameters):
         model: an instance of tf.keras.applications.MobileNetV2
         parameters: list or tuple of parameters to use during training:
             (learning_rate, momentum, nesterov)
-
-    Returns:
-        model : an instance of tf.keras.applications.MobileNetV2
-        metrics : list of classwise recall, precision, and f1 scores of the
-            model on the test_set (list of np.ndarray)
-
     '''
-
-    # freeze the models base layers
-    model = freeze_layers(model)
-
     learning_rate, momentum, nesterov = parameters
     metrics = ['accuracy']
+    
+    # Extract features from train and eval set using pre-trained model
+    train_features = model.predict(train_set[0])
+    eval_features = model.predict(eval_set[0])
+    
+    input_shape = (train_features.shape[1:])
+        
+    # Define custom model layers
+    custom_classification_model = tf.keras.Sequential([
+        tf.keras.layers.GlobalAveragePooling2D(input_shape=input_shape),
+        tf.keras.layers.Dense(5, activation='softmax')
+    ])
 
     # set the optimizer
     optimizer = tf.keras.optimizers.SGD(
@@ -505,23 +507,18 @@ def accelerated_learning(train_set, eval_set, test_set, model, parameters):
         nesterov=nesterov
     )
 
-    # compile the model
-    model.compile(
-        optimizer=optimizer,
-        loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-        metrics=metrics)
-
-    # train the model
-    history = model.fit(
-        x=train_set[0],
-        y=train_set[1],
-        validation_data=eval_set,
-        epochs=30
-    )
-
+    # Compile the classification model
+    custom_classification_model.compile(optimizer=optimizer,
+                         loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+                         metrics=metrics)
+    
+    # Train the classification model on the precomputed features
+    history = custom_classification_model.fit(x=train_features, y=train_set[1],
+                               epochs=10,
+                               validation_data=(eval_features, eval_set[1]))
+    
+    # Plot the training and validation errors and accuracies of accelerated transfer learning
     plot_learning_curves(history, parameters)
-
-    return model, metrics
 
 
 def plot_learning_curves(history, parameters):
