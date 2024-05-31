@@ -61,6 +61,27 @@ def load_model():
     return model
 
 
+def accelerated_learning_model():
+    """
+    Load a pre-trained MobileNetV2 model, add data augmentation, and return the model.
+
+    Returns:
+        tf.keras.Model: A TensorFlow Keras Model with data augmentation and feature extraction layers.
+    """
+    
+    # Load the pre-trained MobileNetV2 model without the top layer (include_top=False)
+    base_model = tf.keras.applications.MobileNetV2(include_top=False, input_shape=(224, 224, 3))
+    
+
+    base_model.trainable = False
+    
+    inputs = tf.keras.Input(shape=(224, 224, 3))
+    x = base_model(inputs, training=False)
+    feature_extraction_model = tf.keras.Model(inputs, x)
+    
+    return feature_extraction_model
+
+
 def freeze_layers(model):
     """
     Freeze all of the layers in the model except the last one.
