@@ -279,15 +279,21 @@ def precision(predictions, ground_truth):
                      values are the precision for each class
     '''
 
+    # Convert predictions and ground truth to numpy arrays
     predictions = np.array(predictions)
     ground_truth = np.array(ground_truth)
 
+    # If predictions are one-hot encoded, convert to class indices
     if predictions.ndim > 1:
         predictions = np.argmax(predictions, axis=1)
 
+    # Determine the number of classes
     num_classes = len(np.unique(ground_truth))
+    
+    # Initialize precision array for each class
     precision = np.zeros(num_classes)
 
+    # Calculate precision for each class
     for cls in range(num_classes):
         true_positives = np.sum((predictions == cls) & (ground_truth == cls))
         all_positives = np.sum(predictions == cls)
@@ -311,15 +317,21 @@ def recall(predictions, ground_truth):
                      values are the recall for each class
     '''
 
+    # Convert predictions and ground truth to numpy arrays
     predictions = np.array(predictions)
     ground_truth = np.array(ground_truth)
 
+    # If predictions are one-hot encoded, convert to class indices
     if predictions.ndim > 1:
         predictions = np.argmax(predictions, axis=1)
 
+    # Determine the number of classes
     num_classes = len(np.unique(ground_truth))
+    
+    # Initialize recall array for each class
     recall = np.zeros(num_classes)
 
+    # Calculate recall for each class
     for cls in range(num_classes):
         true_positives = np.sum((predictions == cls) & (ground_truth == cls))
         all_actual = np.sum(ground_truth == cls)
@@ -341,10 +353,15 @@ def f1(predictions, ground_truth):
         f1: type nd.ndarry of length c where c is the number of classes
     '''
 
+    # Calculate precision for each class
     prec = precision(predictions, ground_truth)
+    
+    # Calculate recall for each class
     rec = recall(predictions, ground_truth)
-    f1 = 2 * (prec * rec) / (prec + rec + 1e-9)  # avoid division by zero
-
+    
+    # Calculate F1 score for each class, adding a small constant to avoid division by zero
+    f1 = 2 * (prec * rec) / (prec + rec + 1e-9)
+    
     return f1
 
 
